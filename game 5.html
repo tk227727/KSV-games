@@ -1,0 +1,2839 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>王・兵士・村人 Ver4</title>
+<style>
+body{
+font-family:sans-serif;
+text-align:center;
+background:#f5f5f5;
+padding:15px;
+}
+#board{
+width:420px;
+max-width:100%;
+margin:auto;
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:4px;
+}
+.cell{
+aspect-ratio:1/1;
+background:white;
+border:2px solid #333;
+display:flex;
+justify-content:center;
+align-items:center;
+font-size:48px;
+}
+.win{
+background:#ffe082;
+animation:flash 0.8s infinite;
+}
+
+@keyframes flash{
+0%{transform:scale(1);}
+50%{transform:scale(1.08);}
+100%{transform:scale(1);}
+}
+.panel{
+background:white;
+padding:10px;
+margin-top:10px;
+border-radius:10px;
+}
+button{
+margin:4px;
+padding:8px 12px;
+}
+.blue{
+color:#1565c0;
+}
+.red{
+color:#c62828;
+}
+</style>
+</head>
+<body>
+<h1>王・兵士・村人 Ver4</h1>
+<div class="panel">
+<select id="mode">
+<option value="classic">
+通常
+</option>
+<option value="cpuClassic">
+CPU（通常）
+</option>
+
+<option value="cpuKnight">
+CPU（騎士あり）
+</option>
+
+<option value="cpuWolf">
+CPU（人狼あり）
+</option>
+
+<option value="cpuBoth">
+CPU（騎士＋人狼）
+</option>
+<option value="knight">
+騎士あり
+</option>
+<option value="wolf">
+人狼あり
+</option>
+<option value="both">
+騎士＋人狼
+</option>
+</select>
+<br><br>
+
+CPU：
+
+<select id="cpuLevel">
+
+<option value="off">
+なし
+</option>
+
+<option value="1">
+Lv1
+</option>
+
+<option value="2">
+Lv2
+</option>
+
+<option value="3">
+Lv3
+</option>
+<option value="4">
+Lv4
+</option>
+<option value="5">
+Lv5
+</option>
+<option value="ultimate">
+最強
+</option>
+
+</select>
+<button onclick="newGame()">
+新しいゲーム
+</button>
+<button onclick="showRules()">
+
+	
+ルール説明
+</button>
+</div>
+<div id="status"></div>
+<div id="board"></div>
+<div class="panel">
+<div id="hand"></div>
+</div>
+<div id="message"></div>
+<div id="victoryOverlay"
+style="
+display:none;
+position:fixed;
+inset:0;
+background:rgba(0,0,0,.8);
+justify-content:center;
+align-items:center;
+z-index:999;
+">
+
+<div
+id="victoryText"
+style="
+font-size:56px;
+font-weight:bold;
+color:white;
+text-shadow:
+0 0 10px gold,
+0 0 20px gold,
+0 0 40px gold;
+">
+</div>
+
+</div>
+<script>
+	
+	const PIECES = {
+king:"王",
+knight:"騎",
+soldier:"兵",
+villager:"村",
+wolf:"狼"
+};
+
+let game = null;
+
+function createHands(mode){
+
+if(
+mode==="classic"
+||
+mode==="cpuClassic"
+){
+return {
+blue:{king:1,soldier:2,villager:2},
+red:{king:1,soldier:2,villager:2}
+};
+}
+
+if(
+mode==="knight"
+||
+mode==="cpuKnight"
+){
+return {
+blue:{king:1,knight:1,soldier:1,villager:2},
+red:{king:1,knight:1,soldier:1,villager:2}
+};
+}
+
+if(
+mode==="wolf"
+||
+mode==="cpuWolf"
+){
+return {
+blue:{king:1,soldier:2,villager:1,wolf:1},
+red:{king:1,soldier:2,villager:1,wolf:1}
+};
+}
+
+return {
+blue:{king:1,knight:1,soldier:1,villager:1,wolf:1},
+red:{king:1,knight:1,soldier:1,villager:1,wolf:1}
+};
+}
+	
+function showVictory(
+title,
+text
+){
+
+document.getElementById(
+"victoryText"
+).innerHTML =
+`
+<div style="
+font-size:26px;
+margin-bottom:12px;
+">
+${title}
+</div>
+
+<div>
+${text}
+</div>
+`;
+
+document.getElementById(
+"victoryOverlay"
+).style.display =
+"flex";
+
+setTimeout(()=>{
+
+document.getElementById(
+"victoryOverlay"
+).style.display =
+"none";
+
+newGame();
+
+},2500);
+
+}
+
+function showRules(){
+
+alert(
+`【勝利条件】
+
+・自分の駒を縦横斜めに3つ並べる
+・相手の王の上に乗る
+
+【駒】
+
+王
+・好きなマスへ移動
+・兵士、村人、騎士、人狼に乗れる
+
+兵士
+・周囲8マスへ移動
+・村人に乗れる
+
+村人
+・縦横1マス移動
+・王に乗れる
+
+騎士
+・兵士と同じ移動
+・自身の王が相手に乗られた時に身代わりになる
+・発動後は兵士になる
+
+人狼
+・能力発動前は村人
+・能力発動後は兵士と同じ強さ
+・王の上に乗れる
+
+人狼能力
+・踏まれた時に反撃可能
+・反撃すると能力発動
+・覚醒後は兵士移動
+・反撃時は同じプレイヤーのターン継続`
+);
+
+}
+
+function newGame(){
+
+const mode =
+document.getElementById("mode").value;
+
+const cpuLevel =
+document.getElementById("cpuLevel").value;
+
+game = {
+
+mode:mode,
+cpuLevel:cpuLevel,
+
+turn:"blue",
+
+selectedHand:null,
+selectedBoard:null,
+
+winningLine:null,
+
+board:[
+[],[],[],
+[],[],[],
+[],[],[]
+],
+
+hands:createHands(mode)
+
+};
+
+render();
+
+}
+
+function topPiece(index){
+
+const stack =
+game.board[index];
+
+if(stack.length===0){
+return null;
+}
+
+return stack[
+stack.length-1
+];
+
+}
+
+function render(){
+
+document.getElementById(
+"status"
+).textContent =
+(game.turn==="blue"
+? "青"
+: "赤")
++ "のターン";
+
+renderBoard();
+renderHand();
+
+}
+
+function renderBoard(){
+
+const board =
+document.getElementById(
+"board"
+);
+
+board.innerHTML = "";
+
+for(
+let i=0;
+i<9;
+i++
+){
+
+const cell =
+document.createElement(
+"div"
+);
+
+cell.className =
+"cell";
+
+if(
+game.winningLine &&
+game.winningLine.includes(i)
+){
+cell.classList.add("win");
+}
+
+const piece =
+topPiece(i);
+
+if(piece){
+
+const displayType =
+(
+piece.type==="wolf"
+&&
+!piece.revealed
+)
+?
+"villager"
+:
+piece.type;
+
+cell.innerHTML =
+`<span class="${piece.owner}">
+${PIECES[displayType]}
+</span>`;
+
+}
+
+cell.onclick =
+()=>cellClick(i);
+
+board.appendChild(
+cell
+);
+
+}
+
+}
+
+function renderHand(){
+
+const area =
+document.getElementById(
+"hand"
+);
+
+area.innerHTML = "";
+
+const hand =
+game.hands[
+game.turn
+];
+
+Object.keys(hand)
+.forEach(type=>{
+
+const btn =
+document.createElement(
+"button"
+);
+
+btn.textContent =
+`${PIECES[type]} ×${hand[type]}`;
+
+btn.disabled =
+hand[type] <= 0;
+
+btn.onclick = ()=>{
+
+game.selectedHand =
+type;
+
+};
+
+area.appendChild(
+btn
+);
+
+});
+
+}
+
+function cellClick(index){
+
+if(
+game.selectedBoard!==null
+){
+
+const piece =
+topPiece(
+game.selectedBoard
+);
+
+if(
+piece &&
+isLegalMove(
+piece,
+game.selectedBoard,
+index
+)
+){
+	
+const target =
+topPiece(index);
+
+if(
+target
+){
+
+if(
+!canStack(
+piece,
+target
+)
+){
+game.selectedBoard =
+null;
+return;
+}
+
+}
+
+game.board[
+game.selectedBoard
+].pop();
+
+const oldStack =
+game.board[
+game.selectedBoard
+];
+
+const topAfterMove =
+oldStack[
+oldStack.length-1
+];
+
+if(
+topAfterMove
+&&
+topAfterMove.type==="wolf"
+&&
+!topAfterMove.revealed
+){
+topAfterMove.wolfPrompted = false;
+}
+
+game.board[index]
+.push(piece);
+
+game.selectedBoard =
+null;
+
+if(
+checkWolfAwaken()
+){
+
+if(checkKingCapture()){
+return;
+}
+
+render();
+return;
+
+}
+
+if(checkKingCapture()){
+return;
+}
+
+if(checkWin()){
+return;
+}
+
+nextTurn();
+
+return;
+
+}
+
+game.selectedBoard =
+null;
+
+}
+	
+if(
+game.selectedHand===null
+&&
+topPiece(index)
+&&
+topPiece(index).owner===
+game.turn
+){
+
+game.selectedBoard =
+index;
+
+return;
+
+}
+
+if(
+game.selectedHand===null
+){
+return;
+}
+
+if(
+topPiece(index)
+){
+return;
+}
+
+const type =
+game.selectedHand;
+
+game.board[index].push({
+
+owner:game.turn,
+
+type:type,
+
+revealed:
+type!=="wolf",
+
+wolfPrompted:false
+
+});
+
+game.hands[
+game.turn
+][type]--;
+
+game.selectedHand =
+null;
+
+if(
+checkWolfAwaken()
+){
+
+if(checkKingCapture()){
+return;
+}
+
+render();
+return;
+
+}
+
+if(checkKingCapture()){
+return;
+}
+
+if(checkWin()){
+return;
+}
+
+nextTurn();
+
+}
+
+function findKnightOnBoard(owner){
+
+for(
+let i=0;
+i<9;
+i++
+){
+
+const stack =
+game.board[i];
+
+for(
+const piece of stack
+){
+
+if(
+piece.owner===owner
+&&
+piece.type==="knight"
+){
+return {
+index:i,
+piece:piece
+};
+}
+
+}
+
+}
+
+return null;
+
+}
+
+function hasKnightInHand(owner){
+
+return (
+game.hands[owner]
+&&
+game.hands[owner].knight
+&&
+game.hands[owner].knight > 0
+);
+
+}
+
+function checkWolfAwaken(){
+
+for(
+let i=0;
+i<9;
+i++
+){
+
+const stack =
+game.board[i];
+
+if(
+stack.length < 2
+){
+continue;
+}
+
+const top =
+stack[
+stack.length-1
+];
+
+const under =
+stack[
+stack.length-2
+];
+
+if(
+under.type==="wolf"
+&&
+!under.revealed
+&&
+top.owner!==under.owner
+&&
+!under.wolfPrompted
+){
+
+if(
+top.type==="knight"
+){
+continue;
+}
+
+under.wolfPrompted = true;
+
+if(
+confirm(
+(under.owner==="blue"
+? "青"
+: "赤")
++
+"の人狼が覚醒！\n反撃しますか？"
+)
+){
+	
+under.revealed =
+true;
+
+stack[
+stack.length-2
+] = top;
+
+stack[
+stack.length-1
+] = under;
+
+alert(
+(under.owner==="blue"
+? "青"
+: "赤")
++
+"の人狼が反撃！"
+);
+
+return true;
+
+}else{
+
+alert(
+(under.owner==="blue"
+? "青"
+: "赤")
++
+"の人狼は反撃しなかった！"
+);
+
+return false;
+
+}
+
+}
+
+}
+
+return false;
+
+}
+
+function checkKingCapture(){
+
+for(
+let i=0;
+i<9;
+i++
+){
+
+const stack =
+game.board[i];
+
+if(
+stack.length < 2
+){
+continue;
+}
+
+const top =
+stack[
+stack.length-1
+];
+
+const under =
+stack[
+stack.length-2
+];
+
+if(
+(
+top.type==="villager"
+||
+top.type==="wolf"
+)
+&&
+under.type==="king"
+&&
+top.owner!==under.owner
+){
+
+const kingOwner =
+under.owner;
+
+/* 盤上騎士 */
+
+const knightInfo =
+findKnightOnBoard(
+kingOwner
+);
+
+if(
+knightInfo
+){
+
+under.type =
+"soldier";
+
+const knightStack =
+game.board[
+knightInfo.index
+];
+
+const knightPiece =
+knightInfo.piece;
+
+knightPiece.type =
+"king";
+
+alert(
+(kingOwner==="blue"
+? "青"
+: "赤")
++
+"の騎士が王を守った！"
+);
+
+return false;
+
+}
+
+/* 手札騎士 */
+
+if(
+hasKnightInHand(
+kingOwner
+)
+){
+
+game.hands[
+kingOwner
+].knight--;
+
+game.hands[
+kingOwner
+].king++;
+
+under.type =
+"soldier";
+
+alert(
+(kingOwner==="blue"
+? "青"
+: "赤")
++
+"の騎士が王を救出！"
+);
+
+return false;
+
+}
+
+/* 通常捕獲 */
+
+showVictory(
+"CHECKMATE",
+(top.owner==="blue"
+? "青"
+: "赤")
++
+"の勝利！"
+);
+
+return true;
+
+}
+
+}
+
+
+return false;
+
+}
+
+function checkWin(){
+
+const lines = [
+
+[0,1,2],
+[3,4,5],
+[6,7,8],
+
+[0,3,6],
+[1,4,7],
+[2,5,8],
+
+[0,4,8],
+[2,4,6]
+
+];
+
+for(const line of lines){
+
+const a = topPiece(line[0]);
+const b = topPiece(line[1]);
+const c = topPiece(line[2]);
+
+if(!a || !b || !c){
+continue;
+}
+
+if(
+a.owner===b.owner &&
+b.owner===c.owner
+){
+
+game.winningLine =
+line;
+
+render();
+
+setTimeout(()=>{
+
+showVictory(
+"THREE IN A ROW",
+(a.owner==="blue"
+? "青"
+: "赤")
++
+"の勝利！"
+);
+
+},1500);
+
+return true;
+
+}
+
+}
+
+return false;
+
+}
+
+function cpuMove(){
+
+if(
+game.cpuLevel==="1"
+){
+cpuMoveLv1();
+return;
+}
+
+if(
+game.cpuLevel==="2"
+){
+cpuMoveLv2();
+return;
+}
+if(
+game.cpuLevel==="3"
+){
+cpuMoveLv3();
+return;
+}
+if(
+game.cpuLevel==="4"
+){
+cpuMoveLv4();
+return;
+}
+if(
+game.cpuLevel==="5"
+){
+cpuMoveLv5();
+return;
+}
+
+if(
+game.cpuLevel==="ultimate"
+){
+cpuMoveUltimate();
+return;
+}
+}
+function cpuMoveUltimate(){
+
+cpuMoveLv5();
+
+}
+
+function blueCanWinNextTurn(){
+
+const lines = [
+
+[0,1,2],
+[3,4,5],
+[6,7,8],
+
+[0,3,6],
+[1,4,7],
+[2,5,8],
+
+[0,4,8],
+[2,4,6]
+
+];
+
+for(
+const line of lines
+){
+
+let blue = 0;
+let empty = 0;
+
+for(
+const pos of line
+){
+
+const piece =
+topPiece(pos);
+
+if(
+!piece
+){
+empty++;
+}
+else if(
+piece.owner==="blue"
+){
+blue++;
+}
+
+}
+
+if(
+blue===2
+&&
+empty===1
+){
+return true;
+}
+
+}
+
+return false;
+
+}
+
+function nextTurn(){
+
+game.turn =
+game.turn==="blue"
+?
+"red"
+:
+"blue";
+
+render();
+
+if(
+game.cpuLevel!=="off"
+&&
+game.turn==="red"
+){
+setTimeout(
+cpuMove,
+500
+);
+}
+
+}
+
+function cpuMoveLv1(){
+
+const hand =
+game.hands.red;
+
+const empty = [];
+
+for(
+let i=0;
+i<9;
+i++
+){
+
+if(
+topPiece(i)===null
+){
+empty.push(i);
+}
+
+}
+
+const placeable =
+Object.keys(hand)
+.filter(
+t=>hand[t]>0
+);
+
+if(
+placeable.length===0
+){
+return;
+}
+
+const type =
+placeable[
+Math.floor(
+Math.random()*
+placeable.length
+)
+];
+
+const index =
+empty[
+Math.floor(
+Math.random()*
+empty.length
+)
+];
+
+game.board[index].push({
+
+owner:"red",
+type:type,
+revealed:
+type!=="wolf",
+wolfPrompted:false
+
+});
+
+hand[type]--;
+
+if(checkKingCapture()){
+return;
+}
+
+if(checkWin()){
+return;
+}
+
+nextTurn();
+
+}
+
+function cpuMoveLv2(){
+
+for(
+let from=0;
+from<9;
+from++
+){
+
+const piece =
+topPiece(from);
+
+if(
+!piece
+||
+piece.owner!=="red"
+){
+continue;
+}
+
+for(
+let to=0;
+to<9;
+to++
+){
+
+const target =
+topPiece(to);
+
+if(
+!target
+||
+target.owner!=="blue"
+||
+target.type!=="king"
+){
+continue;
+}
+
+if(
+isLegalMove(
+piece,
+from,
+to
+)
+&&
+canStack(
+piece,
+target
+)
+){
+
+game.board[from].pop();
+game.board[to].push(piece);
+
+if(checkKingCapture()){
+return;
+}
+
+if(checkWin()){
+return;
+}
+
+nextTurn();
+return;
+
+}
+
+}
+
+}
+
+cpuMoveLv1();
+
+}
+
+function cpuMoveLv3(){
+
+const lines = [
+
+[0,1,2],
+[3,4,5],
+[6,7,8],
+
+[0,3,6],
+[1,4,7],
+[2,5,8],
+
+[0,4,8],
+[2,4,6]
+
+];
+
+/* 自分の勝利を探す */
+
+for(const line of lines){
+
+let red = 0;
+let empty = -1;
+
+for(const pos of line){
+
+const piece =
+topPiece(pos);
+
+if(!piece){
+empty = pos;
+}
+else if(
+piece.owner==="red"
+){
+red++;
+}
+
+}
+
+if(
+red===2
+&&
+empty!==-1
+){
+
+cpuPlaceAt(empty);
+return;
+
+}
+
+}
+
+/* 相手の勝利を防ぐ */
+
+for(const line of lines){
+
+let blue = 0;
+let empty = -1;
+
+for(const pos of line){
+
+const piece =
+topPiece(pos);
+
+if(!piece){
+empty = pos;
+}
+else if(
+piece.owner==="blue"
+){
+blue++;
+}
+
+}
+
+if(
+blue===2
+&&
+empty!==-1
+){
+
+cpuPlaceAt(empty);
+return;
+
+}
+
+}
+
+/* 王を取る */
+
+for(
+let from=0;
+from<9;
+from++
+){
+
+const piece =
+topPiece(from);
+
+if(
+!piece
+||
+piece.owner!=="red"
+){
+continue;
+}
+
+for(
+let to=0;
+to<9;
+to++
+){
+
+const target =
+topPiece(to);
+
+if(
+!target
+||
+target.owner!=="blue"
+||
+target.type!=="king"
+){
+continue;
+}
+
+if(
+isLegalMove(
+piece,
+from,
+to
+)
+&&
+canStack(
+piece,
+target
+)
+){
+
+game.board[from].pop();
+game.board[to].push(piece);
+
+if(checkKingCapture()){
+return;
+}
+
+if(checkWin()){
+return;
+}
+
+nextTurn();
+return;
+
+}
+
+}
+
+}
+
+/* 最後はLv1 */
+
+cpuMoveLv1();
+
+}
+
+function cpuPlaceAt(index){
+
+const hand =
+game.hands.red;
+
+const placeable =
+Object.keys(hand)
+.filter(
+t=>hand[t]>0
+);
+
+if(
+placeable.length===0
+){
+cpuMoveLv1();
+return;
+}
+
+const type =
+placeable[0];
+
+game.board[index].push({
+
+owner:"red",
+type:type,
+revealed:
+type!=="wolf",
+wolfPrompted:false
+
+});
+
+hand[type]--;
+
+if(checkKingCapture()){
+return;
+}
+
+if(checkWin()){
+return;
+}
+
+nextTurn();
+
+}
+
+function cpuMoveLv4(){
+
+if(
+cpuTrySaveKing()
+){
+return;
+}
+
+cpuMoveLv3();
+
+}
+
+
+
+function cpuTrySaveKing(){
+
+let kingPos = -1;
+
+for(
+let i=0;
+i<9;
+i++
+){
+
+const piece =
+topPiece(i);
+
+if(
+piece
+&&
+piece.owner==="red"
+&&
+piece.type==="king"
+){
+kingPos = i;
+break;
+}
+
+}
+
+if(
+kingPos===-1
+){
+return false;
+}
+
+/* 周囲の青村人を探す */
+
+for(
+let i=0;
+i<9;
+i++
+){
+
+const enemy =
+topPiece(i);
+
+if(
+!enemy
+||
+enemy.owner!=="blue"
+){
+continue;
+}
+
+const canCapture =
+
+(
+enemy.type==="villager"
+||
+enemy.type==="wolf"
+);
+
+if(
+!canCapture
+){
+continue;
+}
+
+if(
+isLegalMove(
+enemy,
+i,
+kingPos
+)
+){
+/* 王が危険 */
+return moveKingAway(
+kingPos
+);
+}
+
+}
+
+return false;
+
+}
+
+function kingWouldBeSafe(pos){
+
+for(
+let i=0;
+i<9;
+i++
+){
+
+const enemy =
+topPiece(i);
+
+if(
+!enemy
+||
+enemy.owner!=="blue"
+){
+continue;
+}
+
+const canCaptureKing =
+
+(
+enemy.type==="villager"
+||
+(
+enemy.type==="wolf"
+&&
+!enemy.revealed
+)
+);
+
+if(
+canCaptureKing
+&&
+isLegalMove(
+enemy,
+i,
+pos
+)
+){
+return false;
+}
+
+}
+
+return true;
+
+}
+
+function findRedKing(){
+
+for(
+let i=0;
+i<9;
+i++
+){
+
+const piece =
+topPiece(i);
+
+if(
+piece
+&&
+piece.owner==="red"
+&&
+piece.type==="king"
+){
+return i;
+}
+
+}
+
+return -1;
+
+}
+
+function moveKingAway(kingPos){
+
+const king =
+topPiece(kingPos);
+
+let bestScore =
+-999999;
+
+let bestTo =
+-1;
+
+for(
+let to=0;
+to<9;
+to++
+){
+
+if(
+to===kingPos
+){
+continue;
+}
+
+const target =
+topPiece(to);
+
+/* 行ける場所か */
+
+if(
+target
+){
+
+if(
+!canStack(
+king,
+target
+)
+){
+continue;
+}
+
+}else{
+
+if(
+!isLegalMove(
+king,
+kingPos,
+to
+)
+){
+continue;
+}
+
+}
+
+/* 評価開始 */
+
+let score = 0;
+
+if(
+kingWouldBeSafe(to)
+){
+score += 5000;
+}else{
+continue;
+}
+
+/* 遠くへ逃げる */
+
+let minEnemyDist = 99;
+
+for(
+let i=0;
+i<9;
+i++
+){
+
+const enemy =
+topPiece(i);
+
+if(
+!enemy
+||
+enemy.owner!=="blue"
+){
+continue;
+}
+
+const dist =
+
+Math.abs(
+Math.floor(i/3)
+-
+Math.floor(to/3)
+)
++
+Math.abs(
+(i%3)
+-
+(to%3)
+);
+
+minEnemyDist =
+Math.min(
+minEnemyDist,
+dist
+);
+
+}
+
+score += minEnemyDist * 100;
+
+/* 相手駒に重なる評価 */
+
+if(target){
+
+if(
+target.type==="soldier"
+){
+score += 400;
+}
+
+if(
+target.type==="knight"
+){
+score += 350;
+}
+
+if(
+target.type==="wolf"
+){
+score += 300;
+}
+
+if(
+target.type==="villager"
+){
+score += 250;
+}
+
+}
+
+/* 中央評価 */
+
+if(
+to===4
+){
+score += 50;
+}
+
+if(
+score > bestScore
+){
+
+bestScore =
+score;
+
+bestTo =
+to;
+
+}
+
+}
+
+if(
+bestTo===-1
+){
+return false;
+}
+
+game.board[
+kingPos
+].pop();
+
+game.board[
+bestTo
+].push(
+king
+);
+
+if(
+checkKingCapture()
+){
+return true;
+}
+
+if(
+checkWin()
+){
+return true;
+}
+
+nextTurn();
+
+return true;
+
+}
+
+function cpuMoveLv5(){
+	
+if(
+cpuTrySaveKing()
+){
+return;
+}
+
+let bestScore =
+-999999;
+
+let bestMove = null;
+
+/* 盤上移動を全探索 */
+
+for(
+let from=0;
+from<9;
+from++
+){
+
+const piece =
+topPiece(from);
+
+if(
+!piece
+||
+piece.owner!=="red"
+){
+continue;
+}
+
+for(
+let to=0;
+to<9;
+to++
+){
+
+if(
+from===to
+){
+continue;
+}
+
+const target =
+topPiece(to);
+
+/* 空きマス */
+
+if(
+target===null
+){
+
+if(
+!isLegalMove(
+piece,
+from,
+to
+)
+){
+continue;
+}
+
+
+game.board[from].pop();
+game.board[to].push(piece);
+
+const score =
+evaluateAfterOpponent();
+
+game.board[to].pop();
+game.board[from].push(piece);
+
+if(
+score >= bestScore
+){
+bestScore = score;
+
+bestMove = {
+kind:"move",
+from:from,
+to:to
+};
+}
+
+}
+
+/* 重ねる */
+
+else if(
+target
+&&
+target.owner!=="red"
+&&
+canStack(
+piece,
+target
+)
+&&
+isLegalMove(
+piece,
+from,
+to
+)
+){
+
+game.board[from].pop();
+game.board[to].push(piece);
+
+const score =
+evaluateAfterOpponent()+1000;
+
+game.board[to].pop();
+game.board[from].push(piece);
+
+if(
+score >= bestScore
+){
+bestScore = score;
+
+bestMove = {
+kind:"move",
+from:from,
+to:to
+};
+}
+
+}
+
+}
+
+}
+
+
+/* 手札配置を全探索 */
+
+for(
+let pos=0;
+pos<9;
+pos++
+){
+
+if(
+topPiece(pos)
+){
+continue;
+}
+
+const hand =
+game.hands.red;
+
+for(
+const type of Object.keys(hand)
+){
+
+if(
+hand[type] <= 0
+){
+continue;
+}
+
+/* 仮置き */
+
+game.board[pos].push({
+
+owner:"red",
+type:type,
+revealed:
+type!=="wolf",
+wolfPrompted:false
+
+});
+
+const score =
+evaluateAfterOpponent();
+
+game.board[pos].pop();
+
+if(
+score >= bestScore
+){
+bestScore =
+score;
+
+bestMove = {
+kind:"place",
+pos:pos,
+type:type
+};
+}
+
+}
+
+}
+
+/* 実行 */
+
+if(
+bestMove
+){
+
+if(
+bestMove.kind==="place"
+){
+
+game.board[
+bestMove.pos
+].push({
+
+owner:"red",
+type:bestMove.type,
+revealed:
+bestMove.type!=="wolf",
+wolfPrompted:false
+
+});
+
+game.hands.red[
+bestMove.type
+]--;
+
+}else{
+
+const piece =
+topPiece(
+bestMove.from
+);
+
+game.board[
+bestMove.from
+].pop();
+
+game.board[
+bestMove.to
+].push(piece);
+
+}
+
+if(checkKingCapture()){
+return;
+}
+
+if(checkWin()){
+return;
+}
+
+nextTurn();
+return;
+
+}
+
+cpuMoveLv4();
+
+}
+
+function blueCanActuallyWinNextTurn(){
+
+for(
+let from=0;
+from<9;
+from++
+){
+
+const piece =
+topPiece(from);
+
+if(
+!piece
+||
+piece.owner!=="blue"
+){
+continue;
+}
+
+for(
+let to=0;
+to<9;
+to++
+){
+
+if(
+from===to
+){
+continue;
+}
+
+const target =
+topPiece(to);
+
+/* 空き移動 */
+
+if(
+target===null
+&&
+isLegalMove(
+piece,
+from,
+to
+)
+){
+
+game.board[from].pop();
+game.board[to].push(piece);
+
+const win =
+checkWinSimulation();
+
+game.board[to].pop();
+game.board[from].push(piece);
+
+if(win){
+return true;
+}
+
+}
+
+/* 重ねる */
+
+if(
+target
+&&
+target.owner!=="blue"
+&&
+canStack(
+piece,
+target
+)
+&&
+isLegalMove(
+piece,
+from,
+to
+)
+){
+
+game.board[from].pop();
+game.board[to].push(piece);
+
+const win =
+checkWinSimulation()
+||
+checkKingCaptureSimulation();
+
+game.board[to].pop();
+game.board[from].push(piece);
+
+if(win){
+return true;
+}
+
+}
+
+}
+
+}
+
+/* 青の配置も調べる */
+const hand =
+game.hands.blue;
+
+for(
+let pos=0;
+pos<9;
+pos++
+){
+
+if(
+topPiece(pos)
+){
+continue;
+}
+
+for(
+const type of Object.keys(hand)
+){
+
+if(
+hand[type] <= 0
+){
+continue;
+}
+
+game.board[pos].push({
+
+owner:"blue",
+type:type,
+revealed:true
+
+});
+
+const win =
+checkWinSimulation();
+
+game.board[pos].pop();
+
+if(
+win
+){
+return true;
+}
+
+}
+
+}
+
+return false;
+
+}
+
+function redCanActuallyWinNextTurn(){
+
+const lines = [
+
+[0,1,2],
+[3,4,5],
+[6,7,8],
+
+[0,3,6],
+[1,4,7],
+[2,5,8],
+
+[0,4,8],
+[2,4,6]
+
+];
+
+for(
+const line of lines
+){
+
+let red = 0;
+let empty = 0;
+
+for(
+const pos of line
+){
+
+const piece =
+topPiece(pos);
+
+if(
+!piece
+){
+empty++;
+}
+else if(
+piece.owner==="red"
+){
+red++;
+}
+
+}
+
+if(
+red===2
+&&
+empty===1
+){
+return true;
+}
+
+}
+
+return false;
+
+}
+
+function checkWinSimulation(){
+
+const lines = [
+
+[0,1,2],
+[3,4,5],
+[6,7,8],
+
+[0,3,6],
+[1,4,7],
+[2,5,8],
+
+[0,4,8],
+[2,4,6]
+
+];
+
+for(
+const line of lines
+){
+
+const a = topPiece(line[0]);
+const b = topPiece(line[1]);
+const c = topPiece(line[2]);
+
+if(
+a
+&&
+b
+&&
+c
+&&
+a.owner==="blue"
+&&
+b.owner==="blue"
+&&
+c.owner==="blue"
+){
+return true;
+}
+
+}
+
+return false;
+
+}
+
+function checkKingCaptureSimulation(){
+
+for(
+let i=0;
+i<9;
+i++
+){
+
+const stack =
+game.board[i];
+
+if(
+stack.length<2
+){
+continue;
+}
+
+const top =
+stack[stack.length-1];
+
+const under =
+stack[stack.length-2];
+
+if(
+top.owner==="blue"
+&&
+(
+top.type==="villager"
+||
+top.type==="wolf"
+)
+&&
+under.type==="king"
+&&
+under.owner==="red"
+){
+return true;
+}
+
+}
+
+return false;
+
+}
+
+function evaluateAfterOpponent(){
+
+let worstScore = 999999;
+
+/* 青の全手を試す */
+
+for(
+let from=0;
+from<9;
+from++
+){
+
+const piece =
+topPiece(from);
+
+if(
+!piece
+||
+piece.owner!=="blue"
+){
+continue;
+}
+
+for(
+let to=0;
+to<9;
+to++
+){
+
+if(
+from===to
+){
+continue;
+}
+
+const target =
+topPiece(to);
+
+if(
+target===null
+){
+
+if(
+!isLegalMove(
+piece,
+from,
+to
+)
+){
+continue;
+}
+
+
+
+game.board[from].pop();
+game.board[to].push(piece);
+
+let score =
+evaluateBoard();
+
+const kingPos =
+findRedKing();
+
+if(
+kingPos!==-1
+&&
+!kingWouldBeSafe(
+kingPos
+)
+){
+score -= 5000;
+}
+
+game.board[to].pop();
+game.board[from].push(piece);
+
+worstScore =
+Math.min(
+worstScore,
+score
+);
+
+}
+else if(
+target
+&&
+target.owner!=="blue"
+&&
+canStack(
+piece,
+target
+)
+&&
+isLegalMove(
+piece,
+from,
+to
+)
+){
+
+game.board[from].pop();
+game.board[to].push(piece);
+
+let score =
+evaluateBoard();
+
+const kingPos =
+findRedKing();
+
+if(
+kingPos!==-1
+&&
+!kingWouldBeSafe(
+kingPos
+)
+){
+score -= 5000;
+}
+
+game.board[to].pop();
+game.board[from].push(piece);
+
+worstScore =
+Math.min(
+worstScore,
+score
+);
+
+}
+
+}
+
+}
+
+if(
+worstScore===999999
+){
+return evaluateBoard();
+}
+
+return worstScore;
+
+}
+
+function evaluateBoard(){
+
+let score = 0;
+
+/* 中央 */
+
+const center =
+topPiece(4);
+
+if(
+center
+&&
+center.owner==="red"
+){
+score += 50;
+}
+
+/* ライン評価 */
+
+const lines = [
+
+[0,1,2],
+[3,4,5],
+[6,7,8],
+
+[0,3,6],
+[1,4,7],
+[2,5,8],
+
+[0,4,8],
+[2,4,6]
+
+];
+
+for(
+const line of lines
+){
+
+let red = 0;
+let blue = 0;
+
+for(
+const pos of line
+){
+
+const piece =
+topPiece(pos);
+
+if(!piece){
+continue;
+}
+
+if(
+piece.owner==="red"
+){
+red++;
+}else{
+blue++;
+}
+
+}
+
+if(
+red===2
+&&
+blue===0
+){
+score += 3000;
+}
+
+if(
+blue===2
+&&
+red===0
+){
+score -= 3000;
+}
+
+if(
+red===3
+){
+score += 10000;
+}
+
+if(
+blue===3
+){
+score -= 10000;
+}
+
+}
+
+if(
+redCanActuallyWinNextTurn()
+){
+score += 50000;
+}
+
+if(
+blueCanActuallyWinNextTurn()
+){
+score -= 50000;
+}
+
+return score;
+
+}
+
+function evaluateMoveWithLookahead(){
+
+let score =
+evaluateBoard();
+
+/* 青が次で勝てるなら大減点 */
+
+if(
+blueCanActuallyWinNextTurn()
+){
+score -= 50000;
+}
+
+return score;
+
+}
+
+function canStack(
+attacker,
+defender
+){
+
+if(
+attacker.type==="king"
+){
+return (
+defender.type==="soldier"
+||
+defender.type==="villager"
+||
+defender.type==="knight"
+||
+defender.type==="wolf"
+);
+}
+
+if(
+
+attacker.type==="soldier"
+
+){
+
+return (
+
+defender.type==="villager"
+||
+(
+defender.type==="wolf"
+&&
+!defender.revealed
+)
+);
+}
+
+if(
+attacker.type==="knight"
+){
+return (
+defender.type==="villager"
+||
+(
+defender.type==="wolf"
+&&
+!defender.revealed
+)
+);
+}
+
+if(
+attacker.type==="villager"
+){
+return (
+defender.type==="king"
+);
+}
+
+if(
+attacker.type==="wolf"
+){
+
+if(
+attacker.revealed
+){
+
+return (
+defender.type==="villager"
+);
+
+}
+
+return (
+defender.type==="king"
+);
+
+}
+
+return false;
+
+}
+
+
+function isLegalMove(
+piece,
+from,
+to
+){
+
+const fromRow =
+Math.floor(from/3);
+
+const fromCol =
+from%3;
+
+const toRow =
+Math.floor(to/3);
+
+const toCol =
+to%3;
+
+const rowDiff =
+Math.abs(
+fromRow-toRow
+);
+
+const colDiff =
+Math.abs(
+fromCol-toCol
+);
+
+if(
+piece.type==="king"
+){
+return true;
+}
+
+if(
+piece.type==="soldier"
+||
+piece.type==="knight"
+){
+return (
+Math.max(
+rowDiff,
+colDiff
+)===1
+);
+}
+
+if(
+piece.type==="villager"
+){
+return (
+rowDiff+
+colDiff===1
+);
+}
+
+if(
+piece.type==="wolf"
+){
+
+if(
+piece.revealed
+){
+return (
+Math.max(
+rowDiff,
+colDiff
+)===1
+);
+}
+
+return (
+rowDiff+
+colDiff===1
+);
+
+}
+
+return false;
+
+}
+
+newGame();
+
+</script>
+</body>
+</html>
