@@ -152,6 +152,14 @@ body.dragging{overflow:hidden;touch-action:none}
 }
 .unlimited-label{display:flex;align-items:center;gap:4px;white-space:nowrap}
 
+
+/* ピンク（回復）は盤面上・操作中とも常に四角 */
+.cell.c5 .dot,
+.dot.c5,
+#dragOrb.c5{
+  border-radius:18% !important;
+}
+
 </style>
 </head>
 <body>
@@ -420,7 +428,7 @@ async function finishDrag(timeUp=false){
   busy=true;
   cancelAnimationFrame(rafTimer);
 
-  const finalElapsed=(performance.now()-drag.started)/1000;
+  const finalElapsed=drag.started===null?0:(performance.now()-drag.started)/1000;
   $("elapsed").textContent=finalElapsed.toFixed(2);
   if(limit)$("timeLeft").textContent=Math.max(0,limit-finalElapsed).toFixed(1);
 
@@ -525,7 +533,7 @@ $("board").addEventListener("pointerdown",e=>{
   const color=board[i];
 
   limit=getOperationLimit();
-  drag={last:i,color,pointerId:e.pointerId,started:performance.now()};
+  drag={last:i,color,pointerId:e.pointerId,started:null};
 
   lockPage();
   try{$("board").setPointerCapture(e.pointerId)}catch(_){}
@@ -542,6 +550,12 @@ $("board").addEventListener("pointermove",e=>{
 
   const target=indexFromPoint(e.clientX,e.clientY);
   if(target===drag.last)return;
+
+  // 最初に1マス動いた瞬間から操作時間を計測開始
+  if(drag.started===null){
+    drag.started=performance.now();
+    startTimer();
+  }
 
   // 現在位置から指の位置まで、縦横＋斜めの8方向で1マスずつ移動
   let cur=drag.last;
