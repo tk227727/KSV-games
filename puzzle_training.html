@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>パズル練習盤</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif}
+body{margin:0;background:#11131a;color:#f5f7fb;min-height:100vh}
+button,select{font:inherit}
+.wrap{max-width:560px;margin:auto;padding:18px 14px 28px}
+h1{font-size:24px;margin:2px 0 16px}
+.panel{background:#1b1e27;border:1px solid #303542;border-radius:16px;padding:14px;margin-bottom:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+label{font-size:13px;color:#aeb5c4}
+select,button{background:#272c38;color:#fff;border:1px solid #3b4252;border-radius:10px;padding:10px 12px}
+button{cursor:pointer}
+button.primary{background:#3d5cff;border-color:#526dff;font-weight:700}
+button.active{outline:2px solid #8294ff}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.stat{background:#141720;border-radius:11px;padding:8px;text-align:center}
+.stat b{display:block;font-size:20px}
+.stat small{color:#8f97a8}
+#board{width:min(92vw,500px);height:auto;min-height:250px;aspect-ratio:6/5;margin:10px auto 8px;display:grid;gap:3px;touch-action:none;user-select:none}
+.cell{position:relative;border-radius:8px;display:flex;align-items:center;justify-content:center;min-width:0;min-height:0}
+.dot{width:78%;height:78%;border-radius:50%;box-shadow:inset 0 2px 3px #ffffff55,0 2px 2px #0008}
+.c0{background:#e64b4b}.c1{background:#4e9de8}.c2{background:#56bd67}.c3{background:#d9a63b}.c4{background:#a86ad8}.c5{background:#e9e9ef}.cell:not([class*="c"]){background:#242936}
+.c0 .dot{background:#ff5b5b}.c1 .dot{background:#4da8ff}.c2 .dot{background:#63d77a}.c3 .dot{background:#ffd04d}.c4 .dot{background:#bd78ff}.c5 .dot{background:#fff}
+.cell.selected{filter:brightness(1.25);transform:scale(1.04)}
+#message{text-align:center;color:#b9c1d2;min-height:22px}
+.customGrid{display:grid;gap:3px;width:min(92vw,500px);margin:10px auto}
+.customCell{aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center}
+.customCell .dot{width:70%;height:70%}
+.help{font-size:12px;color:#8f97a8;line-height:1.5}
+.hidden{display:none!important}
+@media(max-width:380px){.stats{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>🧩 パズル練習盤</h1>
+
+<div class="panel">
+  <div class="row">
+    <label>盤面</label>
+    <select id="size">
+      <option value="6x5">6 × 5</option>
+      <option value="7x6">7 × 6</option>
+      <option value="5x4">5 × 4</option>
+    </select>
+    <label>操作時間</label>
+    <select id="time">
+      <option value="3">3秒</option><option value="4">4秒</option>
+      <option value="5">5秒</option><option value="6">6秒</option>
+      <option value="7">7秒</option><option value="10">10秒</option>
+      <option value="15">15秒</option><option value="0">無制限</option>
+    </select>
+  </div>
+  <div class="row" style="margin-top:9px">
+    <button class="primary" id="newBtn">新しい盤面</button>
+    <button id="customBtn">盤面を自分で作る</button>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="stats">
+    <div class="stat"><b id="combo">0</b><small>コンボ</small></div>
+    <div class="stat"><b id="timeLeft">—</b><small>残り</small></div>
+    <div class="stat"><b id="moves">0</b><small>移動数</small></div>
+    <div class="stat"><b id="best">—</b><small>最高コンボ</small></div>
+  </div>
+</div>
+
+<div id="playArea">
+  <div id="board"></div>
+  <div id="message">ドロップを押したまま動かしてください</div>
+</div>
+
+<div id="customArea" class="hidden">
+  <div class="panel">
+    <div class="row">
+      <button class="primary" id="applyCustom">この盤面で練習</button>
+      <button id="randomCustom">ランダムに埋める</button>
+      <button id="clearCustom">全部消す</button>
+    </div>
+    <p class="help">好きなドロップを選んで、盤面のマスをタップしてください。もう一度タップすると消去できます。</p>
+    <div class="row" id="palette"></div>
+  </div>
+  <div id="customGrid" class="customGrid"></div>
+</div>
+
+<div class="panel help">
+  <b>遊び方</b><br>
+  盤面のドロップを押し続けて、好きなルートで動かします。指を離すと終了です。<br>
+  消える判定は「3個以上つながった同色」。落下・連鎖は行わず、<b>盤面上で何コンボ組めたか</b>を練習用スコアとして表示します。
+</div>
+</div>
+
+<script>
+const colors=6;
+let cols=6,rows=5,board=[],drag=null,timer=null,startAt=0,limit=5,moves=0;
+let custom=false,customData=[],paintColor=0;
+let best=Number(localStorage.getItem("puzzleBest")||0);
+
+const $=id=>document.getElementById(id);
+$("best").textContent=best||"—";
+
+function setSize(){
+  const [c,r]=$("size").value.split("x").map(Number); cols=c;rows=r;
+  $("board").style.gridTemplateColumns=`repeat(${cols},1fr)`;
+  $("board").style.aspectRatio=`${cols}/${rows}`;
+}
+function randomBoard(){return Array.from({length:cols*rows},()=>Math.floor(Math.random()*colors))}
+function render(){
+  const el=$("board"); el.innerHTML="";
+  board.forEach((v,i)=>{
+    const cell=document.createElement("div");cell.className="cell "+(v>=0?"c"+v:"");
+    cell.dataset.i=i;
+    if(v>=0){const d=document.createElement("div");d.className="dot";cell.appendChild(d)}
+    el.appendChild(cell);
+  });
+}
+function indexFromPoint(x,y){
+  const r=$("board").getBoundingClientRect();
+  let c=Math.floor((x-r.left)/r.width*cols), rr=Math.floor((y-r.top)/r.height*rows);
+  c=Math.max(0,Math.min(cols-1,c));rr=Math.max(0,Math.min(rows-1,rr));return rr*cols+c;
+}
+function swap(a,b){[board[a],board[b]]=[board[b],board[a]];moves++;render();calcCombo()}
+function calcCombo(){
+  const seen=new Set(),groups=[];
+  for(let i=0;i<board.length;i++){
+    if(seen.has(i)||board[i]<0)continue;
+    const color=board[i],q=[i],g=[];seen.add(i);
+    while(q.length){let x=q.pop();g.push(x);let r=Math.floor(x/cols),c=x%cols;
+      for(const [dr,dc] of [[1,0],[-1,0],[0,1],[0,-1]]){
+        let nr=r+dr,nc=c+dc,ni=nr*cols+nc;
+        if(nr>=0&&nr<rows&&nc>=0&&nc<cols&&!seen.has(ni)&&board[ni]===color){seen.add(ni);q.push(ni)}
+      }
+    }
+    if(g.length>=3)groups.push(g);
+  }
+  $("combo").textContent=groups.length;
+  if(groups.length>best){best=groups.length;$("best").textContent=best;localStorage.setItem("puzzleBest",best)}
+  return groups.length;
+}
+function begin(){
+  custom=false;$("playArea").classList.remove("hidden");$("customArea").classList.add("hidden");
+  setSize();board=randomBoard();moves=0;render();calcCombo();startTimer();
+}
+function startTimer(){
+  clearInterval(timer);limit=Number($("time").value);startAt=performance.now();
+  if(!limit){$("timeLeft").textContent="∞";return}
+  $("timeLeft").textContent=limit.toFixed(1);
+  timer=setInterval(()=>{
+    const left=Math.max(0,limit-(performance.now()-startAt)/1000);
+    $("timeLeft").textContent=left.toFixed(1);
+    if(left<=0){clearInterval(timer);drag=null;$("message").textContent="時間切れ！ 「新しい盤面」で再挑戦できます。"}
+  },50);
+}
+$("board").addEventListener("pointerdown",e=>{
+  if(!e.target.closest(".cell"))return;
+  if(limit && (performance.now()-startAt)/1000>=limit)return;
+  e.preventDefault();const i=indexFromPoint(e.clientX,e.clientY);drag={i,last:i};
+  $("board").setPointerCapture(e.pointerId);$("board").children[i].classList.add("selected");
+});
+$("board").addEventListener("pointermove",e=>{
+  if(!drag)return;e.preventDefault();let i=indexFromPoint(e.clientX,e.clientY);
+  if(i!==drag.last){swap(drag.last,i);drag.last=i}
+});
+$("board").addEventListener("pointerup",e=>{
+  if(!drag)return;$("board").children[drag.last]?.classList.remove("selected");drag=null;
+});
+$("board").addEventListener("pointercancel",()=>drag=null);
+$("newBtn").onclick=begin;
+$("size").onchange=begin;
+
+$("time").onchange=()=>{if(!custom)begin()};
+
+function initCustom(){
+  custom=true;clearInterval(timer);$("playArea").classList.add("hidden");$("customArea").classList.remove("hidden");
+  const [c,r]=$("size").value.split("x").map(Number);cols=c;rows=r;customData=randomBoard();renderCustom();
+}
+function renderCustom(){
+  const g=$("customGrid");g.style.gridTemplateColumns=`repeat(${cols},1fr)`;g.innerHTML="";
+  customData.forEach((v,i)=>{
+    const x=document.createElement("div");x.className="customCell "+(v>=0?"c"+v:"");x.dataset.i=i;
+    if(v>=0){const d=document.createElement("div");d.className="dot";x.appendChild(d)}
+    x.onclick=()=>{customData[i]=(customData[i]===paintColor?-1:paintColor);renderCustom()};
+    g.appendChild(x);
+  });
+}
+function makePalette(){
+  const p=$("palette");p.innerHTML="";
+  for(let c=0;c<colors;c++){let b=document.createElement("button");b.textContent=["🔥","💧","🌿","⚡","🌙","💗"][c];b.className=c===paintColor?"active":"";b.onclick=()=>{paintColor=c;makePalette()};p.appendChild(b)}
+}
+$("customBtn").onclick=initCustom;
+$("size").addEventListener("change",()=>{if(custom)initCustom()});
+$("randomCustom").onclick=()=>{customData=randomBoard();renderCustom()};
+$("clearCustom").onclick=()=>{customData=Array(cols*rows).fill(-1);renderCustom()};
+$("applyCustom").onclick=()=>{
+  if(customData.some(x=>x<0)){alert("空いているマスがあります。すべて埋めてください。");return}
+  board=[...customData];custom=false;$("customArea").classList.add("hidden");$("playArea").classList.remove("hidden");
+  setSize();moves=0;render();calcCombo();$("message").textContent="自作盤面スタート！";startTimer();
+};
+makePalette();begin();
+</script>
+</body>
+</html>
