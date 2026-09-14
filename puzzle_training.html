@@ -71,18 +71,7 @@ button.active{outline:2px solid #93a0ff}
   filter:blur(2px);
   transform:rotate(-25deg)
 }
-.dot:after{
-  position:absolute;
-  inset:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  color:#fff;
-  font-size:clamp(11px,3.5vw,21px);
-  font-weight:900;
-  text-shadow:0 2px 2px #0009;
-  content:attr(data-mark)
-}
+.dot:after{content:"";display:none}
 .c0 .dot{background:radial-gradient(circle at 35% 28%,#ff9a72,#e33e32 58%,#991b1b)}
 .c1 .dot{background:radial-gradient(circle at 35% 28%,#8cd7ff,#3187e8 58%,#1450a2)}
 .c2 .dot{background:radial-gradient(circle at 35% 28%,#b0f09b,#57b95e 58%,#28753b)}
@@ -95,6 +84,11 @@ button.active{outline:2px solid #93a0ff}
   0%{transform:scale(1);opacity:1}
   55%{transform:scale(1.22);opacity:.85}
   100%{transform:scale(.08);opacity:0}
+}
+.cell.dropping .dot{animation:orbDrop .28s ease-out}
+@keyframes orbDrop{
+  0%{transform:translateY(-125%);opacity:.25}
+  100%{transform:translateY(0);opacity:1}
 }
 #dragOrb{
   position:fixed;
@@ -118,12 +112,7 @@ button.active{outline:2px solid #93a0ff}
   filter:blur(2px);
   transform:rotate(-25deg)
 }
-#dragOrb:after{
-  position:absolute;inset:0;
-  display:flex;align-items:center;justify-content:center;
-  color:#fff;font-weight:900;text-shadow:0 2px 2px #0009;
-  content:attr(data-mark)
-}
+#dragOrb:after{content:"";display:none}
 #dragOrb.c0{background:radial-gradient(circle at 35% 28%,#ff9a72,#e33e32 58%,#991b1b)}
 #dragOrb.c1{background:radial-gradient(circle at 35% 28%,#8cd7ff,#3187e8 58%,#1450a2)}
 #dragOrb.c2{background:radial-gradient(circle at 35% 28%,#b0f09b,#57b95e 58%,#28753b)}
@@ -211,7 +200,7 @@ body.dragging{overflow:hidden;touch-action:none}
 </div>
 
 <div class="panel help">
-  パズルを動かしている間は画面スクロールを固定します。指を離すと、横・縦に3個以上そろったドロップが消え、コンボ数を表示したあと新しいランダム盤面に切り替わります。
+  パズルを動かしている間は画面スクロールを固定します。指を離すと、横・縦に3個以上そろったドロップが1コンボずつ順番に消えます。空いた場所には上からドロップが補充され、落下後に新しくそろったドロップも追加コンボとして続けて消えます。
 </div>
 </div>
 
@@ -419,40 +408,93 @@ async function finishDrag(timeUp=false){
   hideDragOrb();
   [...$("board").children].forEach(c=>c.classList.remove("active"));
 
-  const result=getMatches();
-  const combos=result.groups.length;
-  $("combo").textContent=combos;
+  let totalCombo=0;
+  let hadMatch=false;
 
-  if(combos>best){
-    best=combos;
+  // 消去 → 落下・補充 → 再判定を、揃わなくなるまで繰り返す
+  while(true){
+    const result=getMatches();
+    if(!result.groups.length)break;
+    hadMatch=true;
+
+    // 同時に成立している複数コンボも、1コンボずつ順番に表示・消去
+    for(const group of result.groups){
+      totalCombo++;
+      $("combo").textContent=String(totalCombo);
+      $("message").textContent=timeUp
+        ? `時間切れ！ ${totalCombo}コンボ`
+        : `${totalCombo}コンボ！`;
+
+      group.forEach(i=>{
+        $("board").children[i]?.classList.add("clearing");
+      });
+
+      await wait(360);
+
+      // このコンボ分だけ空きマスにする
+      group.forEach(i=>{
+        board[i]=-1;
+        const cell=$("board").children[i];
+        if(cell) cell.innerHTML="";
+      });
+
+      await wait(140);
+    }
+
+    // 消えた場所へ既存ドロップを落とし、上から新しいドロップを補充
+    collapseAndFill();
+    render();
+    [...$("board").children].forEach(c=>c.classList.add("dropping"));
+    $("message").textContent=`${totalCombo}コンボ　落下中…`;
+    await wait(330);
+
+    // 落下後に新しく揃ったものも次のコンボとして続けて判定
+    await wait(120);
+  }
+
+  if(totalCombo>best){
+    best=totalCombo;
     localStorage.setItem("puzzleBest",best);
     $("best").textContent=best;
   }
 
-  if(result.matched.length){
-    $("message").textContent=timeUp?`時間切れ！ ${combos}コンボ`:`${combos}コンボ！`;
-    result.matched.forEach(i=>$("board").children[i]?.classList.add("clearing"));
-    await wait(420);
-  }else{
+  if(!hadMatch){
+    $("combo").textContent="0";
     $("message").textContent=timeUp?"時間切れ！ マッチなし":"マッチなし";
     await wait(350);
+  }else{
+    $("message").textContent=`${totalCombo}コンボ！　終了`;
+    await wait(450);
   }
 
-  $("message").textContent="次のランダム盤面を作成中…";
-  await wait(300);
-
-  board=randomBoard();
-  render();
-  moves=0;
-  $("moves").textContent="0";
-  $("combo").textContent="0";
-  $("elapsed").textContent="0.00";
+  // 盤面はそのまま残す。次の練習は「新しい盤面」で開始。
   $("timeLeft").textContent=limit?limit.toFixed(1):"∞";
-  $("message").textContent="次の盤面です。ドロップを押したまま動かしてください";
-
   busy=false;
   unlockPage();
 }
+
+function collapseAndFill(){
+  for(let c=0;c<cols;c++){
+    const kept=[];
+
+    // 下から順に、消えていないドロップを保持
+    for(let r=rows-1;r>=0;r--){
+      const v=board[r*cols+c];
+      if(v>=0)kept.push(v);
+    }
+
+    // 足りない分は上から降ってくる新規ランダムドロップ
+    while(kept.length<rows){
+      kept.push(Math.floor(Math.random()*colors));
+    }
+
+    // 下側から詰め直す
+    for(let r=rows-1;r>=0;r--){
+      board[r*cols+c]=kept[rows-1-r];
+    }
+  }
+}
+
 function wait(ms){return new Promise(r=>setTimeout(r,ms))}
 
 $("board").addEventListener("pointerdown",e=>{
