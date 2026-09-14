@@ -85,7 +85,7 @@ button.active{outline:2px solid #93a0ff}
   55%{transform:scale(1.22);opacity:.85}
   100%{transform:scale(.08);opacity:0}
 }
-.cell.dropping .dot{animation:orbDrop .28s ease-out}
+.cell.dropping .dot{animation:orbDrop .15s ease-out}
 @keyframes orbDrop{
   0%{transform:translateY(-125%);opacity:.25}
   100%{transform:translateY(0);opacity:1}
@@ -137,6 +137,21 @@ body.dragging{overflow:hidden;touch-action:none}
   .wrap{padding-left:6px;padding-right:6px}
   .stats{gap:3px}
 }
+
+/* ピンクドロップだけ四角形 */
+.dot.c5,
+#dragOrb.c5{
+  border-radius:18% !important;
+}
+
+
+.time-custom{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.time-custom input[type="number"]{
+  width:82px;background:#292e3a;color:#fff;border:1px solid #485061;
+  border-radius:10px;padding:8px 10px;font:inherit
+}
+.unlimited-label{display:flex;align-items:center;gap:4px;white-space:nowrap}
+
 </style>
 </head>
 <body>
@@ -153,16 +168,11 @@ body.dragging{overflow:hidden;touch-action:none}
     </select>
 
     <label>操作時間</label>
-    <select id="time">
-      <option value="3">3秒</option>
-      <option value="4">4秒</option>
-      <option value="5" selected>5秒</option>
-      <option value="6">6秒</option>
-      <option value="7">7秒</option>
-      <option value="10">10秒</option>
-      <option value="15">15秒</option>
-      <option value="0">無制限</option>
-    </select>
+    <div class="time-custom">
+      <input id="timeInput" type="number" min="0.1" step="0.1" value="5" inputmode="decimal" aria-label="操作時間">
+      <span>秒</span>
+      <label class="unlimited-label"><input id="unlimitedTime" type="checkbox"> 無制限</label>
+    </div>
   </div>
 
   <div class="row" style="margin-top:9px">
@@ -241,12 +251,22 @@ function render(){
     el.appendChild(cell);
   });
 }
+function getOperationLimit(){
+  if($("unlimitedTime").checked)return 0;
+  const v=Number($("timeInput").value);
+  return Number.isFinite(v)&&v>0?v:5;
+}
+function applyTimeSetting(){
+  limit=getOperationLimit();
+  $("timeInput").disabled=$("unlimitedTime").checked;
+  if(!drag)$("timeLeft").textContent=limit?limit.toFixed(1):"∞";
+}
 function resetStats(){
   moves=0;
   $("moves").textContent="0";
   $("combo").textContent="0";
   $("elapsed").textContent="0.00";
-  limit=Number($("time").value);
+  limit=getOperationLimit();
   $("timeLeft").textContent=limit?limit.toFixed(1):"∞";
 }
 function newBoard(message="ドロップを押したまま動かしてください"){
@@ -429,7 +449,7 @@ async function finishDrag(timeUp=false){
         $("board").children[i]?.classList.add("clearing");
       });
 
-      await wait(360);
+      await wait(170);
 
       // このコンボ分だけ空きマスにする
       group.forEach(i=>{
@@ -438,7 +458,7 @@ async function finishDrag(timeUp=false){
         if(cell) cell.innerHTML="";
       });
 
-      await wait(140);
+      await wait(70);
     }
 
     // 消えた場所へ既存ドロップを落とし、上から新しいドロップを補充
@@ -446,10 +466,10 @@ async function finishDrag(timeUp=false){
     render();
     [...$("board").children].forEach(c=>c.classList.add("dropping"));
     $("message").textContent=`${totalCombo}コンボ　落下中…`;
-    await wait(330);
+    await wait(160);
 
     // 落下後に新しく揃ったものも次のコンボとして続けて判定
-    await wait(120);
+    await wait(50);
   }
 
   if(totalCombo>best){
@@ -464,7 +484,7 @@ async function finishDrag(timeUp=false){
     await wait(350);
   }else{
     $("message").textContent=`${totalCombo}コンボ！　終了`;
-    await wait(450);
+    await wait(220);
   }
 
   // 盤面はそのまま残す。次の練習は「新しい盤面」で開始。
@@ -504,7 +524,7 @@ $("board").addEventListener("pointerdown",e=>{
   const i=indexFromPoint(e.clientX,e.clientY);
   const color=board[i];
 
-  limit=Number($("time").value);
+  limit=getOperationLimit();
   drag={last:i,color,pointerId:e.pointerId,started:performance.now()};
 
   lockPage();
@@ -520,13 +540,23 @@ $("board").addEventListener("pointermove",e=>{
   e.preventDefault();
   moveDragOrb(e.clientX,e.clientY);
 
-  const i=indexFromPoint(e.clientX,e.clientY);
-  if(i!==drag.last){
-    const prev=drag.last;
-    swap(prev,i);
-    drag.last=i;
-    markActive(i);
+  const target=indexFromPoint(e.clientX,e.clientY);
+  if(target===drag.last)return;
+
+  // 現在位置から指の位置まで、縦横＋斜めの8方向で1マスずつ移動
+  let cur=drag.last;
+  let guard=0;
+  while(cur!==target && guard++<Math.max(rows,cols)*2){
+    const cr=Math.floor(cur/cols), cc=cur%cols;
+    const tr=Math.floor(target/cols), tc=target%cols;
+    const nr=cr+Math.sign(tr-cr);
+    const nc=cc+Math.sign(tc-cc);
+    const next=nr*cols+nc;
+    swap(cur,next);
+    cur=next;
   }
+  drag.last=cur;
+  markActive(cur);
 });
 
 $("board").addEventListener("pointerup",e=>{
@@ -543,10 +573,8 @@ $("size").onchange=()=>{
   if(custom)initCustom();
   else newBoard("盤面サイズを変更しました");
 };
-$("time").onchange=()=>{
-  limit=Number($("time").value);
-  if(!drag)$("timeLeft").textContent=limit?limit.toFixed(1):"∞";
-};
+$("timeInput").oninput=applyTimeSetting;
+$("unlimitedTime").onchange=applyTimeSetting;
 
 function initCustom(){
   cancelAnimationFrame(rafTimer);
