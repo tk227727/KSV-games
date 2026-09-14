@@ -7,34 +7,147 @@
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif}
-body{margin:0;background:#11131a;color:#f5f7fb;min-height:100vh}
+html,body{margin:0;min-height:100%;background:#0a0c12;color:#f5f7fb;overscroll-behavior:none}
+body{min-height:100vh}
 button,select{font:inherit}
-.wrap{max-width:560px;margin:auto;padding:18px 14px 28px}
-h1{font-size:24px;margin:2px 0 16px}
-.panel{background:#1b1e27;border:1px solid #303542;border-radius:16px;padding:14px;margin-bottom:12px}
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-label{font-size:13px;color:#aeb5c4}
-select,button{background:#272c38;color:#fff;border:1px solid #3b4252;border-radius:10px;padding:10px 12px}
+.wrap{max-width:560px;margin:auto;padding:12px 10px 24px}
+h1{font-size:22px;margin:2px 0 10px;text-align:center}
+.panel{background:linear-gradient(180deg,#1c202a,#11141c);border:1px solid #343a48;border-radius:15px;padding:10px;margin-bottom:9px;box-shadow:0 5px 18px #0007}
+.row{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+label{font-size:12px;color:#aeb6c6}
+select,button{background:#292e3a;color:#fff;border:1px solid #485061;border-radius:10px;padding:8px 10px}
 button{cursor:pointer}
-button.primary{background:#3d5cff;border-color:#526dff;font-weight:700}
-button.active{outline:2px solid #8294ff}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
-.stat{background:#141720;border-radius:11px;padding:8px;text-align:center}
-.stat b{display:block;font-size:20px}
-.stat small{color:#8f97a8}
-#board{width:min(92vw,500px);height:auto;min-height:250px;aspect-ratio:6/5;margin:10px auto 8px;display:grid;gap:3px;touch-action:none;user-select:none}
-.cell{position:relative;border-radius:8px;display:flex;align-items:center;justify-content:center;min-width:0;min-height:0}
-.dot{width:78%;height:78%;border-radius:50%;box-shadow:inset 0 2px 3px #ffffff55,0 2px 2px #0008}
-.c0{background:#e64b4b}.c1{background:#4e9de8}.c2{background:#56bd67}.c3{background:#d9a63b}.c4{background:#a86ad8}.c5{background:#e9e9ef}.cell:not([class*="c"]){background:#242936}
-.c0 .dot{background:#ff5b5b}.c1 .dot{background:#4da8ff}.c2 .dot{background:#63d77a}.c3 .dot{background:#ffd04d}.c4 .dot{background:#bd78ff}.c5 .dot{background:#fff}
-.cell.selected{filter:brightness(1.25);transform:scale(1.04)}
-#message{text-align:center;color:#b9c1d2;min-height:22px}
-.customGrid{display:grid;gap:3px;width:min(92vw,500px);margin:10px auto}
-.customCell{aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center}
+button.primary{background:linear-gradient(#536eff,#3049d9);border-color:#7589ff;font-weight:700}
+button.active{outline:2px solid #93a0ff}
+
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+.stat{background:#0d1017;border-radius:10px;padding:6px 2px;text-align:center}
+.stat b{display:block;font-size:18px;line-height:1.2}
+.stat small{color:#929aaa;font-size:10px}
+
+#board{
+  width:min(96vw,500px);
+  margin:8px auto 7px;
+  display:grid;
+  gap:2px;
+  padding:4px;
+  border-radius:12px;
+  background:linear-gradient(145deg,#4b5362,#171b23 55%,#303744);
+  box-shadow:0 6px 22px #000b,inset 0 1px 1px #fff2;
+  touch-action:none;
+  user-select:none;
+  -webkit-user-select:none;
+  overscroll-behavior:none;
+}
+.cell{
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-width:0;
+  min-height:0;
+  border-radius:7px;
+  background:radial-gradient(circle at 50% 45%,#272c36,#11141a);
+  overflow:hidden;
+  touch-action:none
+}
+.dot{
+  width:84%;
+  height:84%;
+  border-radius:50%;
+  position:relative;
+  box-shadow:inset 0 -4px 7px #0008,inset 0 2px 3px #fff8,0 2px 4px #000b;
+  transition:transform .07s,opacity .07s
+}
+.dot:before{
+  content:"";
+  position:absolute;
+  width:38%;
+  height:24%;
+  left:17%;
+  top:12%;
+  border-radius:50%;
+  background:#fff9;
+  filter:blur(2px);
+  transform:rotate(-25deg)
+}
+.dot:after{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#fff;
+  font-size:clamp(11px,3.5vw,21px);
+  font-weight:900;
+  text-shadow:0 2px 2px #0009;
+  content:attr(data-mark)
+}
+.c0 .dot{background:radial-gradient(circle at 35% 28%,#ff9a72,#e33e32 58%,#991b1b)}
+.c1 .dot{background:radial-gradient(circle at 35% 28%,#8cd7ff,#3187e8 58%,#1450a2)}
+.c2 .dot{background:radial-gradient(circle at 35% 28%,#b0f09b,#57b95e 58%,#28753b)}
+.c3 .dot{background:radial-gradient(circle at 35% 28%,#fff39a,#e5b62e 58%,#9a6914)}
+.c4 .dot{background:radial-gradient(circle at 35% 28%,#dba0ff,#9a58df 58%,#5a2b91)}
+.c5 .dot{background:radial-gradient(circle at 35% 28%,#fff,#ff79ad 42%,#e53878 70%,#94153f)}
+.cell.active .dot{opacity:.12}
+.cell.clearing .dot{animation:orbClear .34s ease-out forwards}
+@keyframes orbClear{
+  0%{transform:scale(1);opacity:1}
+  55%{transform:scale(1.22);opacity:.85}
+  100%{transform:scale(.08);opacity:0}
+}
+#dragOrb{
+  position:fixed;
+  left:0;top:0;
+  z-index:9999;
+  pointer-events:none;
+  display:none;
+  transform:translate(-50%,-50%);
+  border-radius:50%;
+  filter:brightness(1.12);
+  box-shadow:inset 0 -5px 8px #0008,inset 0 2px 4px #fff9,0 5px 12px #000a;
+}
+#dragOrb:before{
+  content:"";
+  position:absolute;
+  width:38%;
+  height:24%;
+  left:17%;top:12%;
+  border-radius:50%;
+  background:#fff9;
+  filter:blur(2px);
+  transform:rotate(-25deg)
+}
+#dragOrb:after{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:900;text-shadow:0 2px 2px #0009;
+  content:attr(data-mark)
+}
+#dragOrb.c0{background:radial-gradient(circle at 35% 28%,#ff9a72,#e33e32 58%,#991b1b)}
+#dragOrb.c1{background:radial-gradient(circle at 35% 28%,#8cd7ff,#3187e8 58%,#1450a2)}
+#dragOrb.c2{background:radial-gradient(circle at 35% 28%,#b0f09b,#57b95e 58%,#28753b)}
+#dragOrb.c3{background:radial-gradient(circle at 35% 28%,#fff39a,#e5b62e 58%,#9a6914)}
+#dragOrb.c4{background:radial-gradient(circle at 35% 28%,#dba0ff,#9a58df 58%,#5a2b91)}
+#dragOrb.c5{background:radial-gradient(circle at 35% 28%,#fff,#ff79ad 42%,#e53878 70%,#94153f)}
+
+#message{text-align:center;color:#cbd1dd;min-height:21px;font-size:13px;font-weight:600}
+.customGrid{display:grid;gap:3px;width:min(96vw,500px);margin:9px auto}
+.customCell{aspect-ratio:1;border-radius:7px;display:flex;align-items:center;justify-content:center;background:#171a22}
 .customCell .dot{width:70%;height:70%}
-.help{font-size:12px;color:#8f97a8;line-height:1.5}
+.help{font-size:12px;color:#9099aa;line-height:1.5}
 .hidden{display:none!important}
-@media(max-width:380px){.stats{grid-template-columns:repeat(2,1fr)}}
+#palette button{min-width:42px;padding:7px}
+body.dragging{overflow:hidden;touch-action:none}
+@media(max-width:430px){
+  .stats{grid-template-columns:repeat(5,1fr)}
+  .stat b{font-size:16px}
+  .stat small{font-size:9px}
+}
+@media(max-width:360px){
+  .wrap{padding-left:6px;padding-right:6px}
+  .stats{gap:3px}
+}
 </style>
 </head>
 <body>
@@ -49,14 +162,20 @@ button.active{outline:2px solid #8294ff}
       <option value="7x6">7 × 6</option>
       <option value="5x4">5 × 4</option>
     </select>
+
     <label>操作時間</label>
     <select id="time">
-      <option value="3">3秒</option><option value="4">4秒</option>
-      <option value="5">5秒</option><option value="6">6秒</option>
-      <option value="7">7秒</option><option value="10">10秒</option>
-      <option value="15">15秒</option><option value="0">無制限</option>
+      <option value="3">3秒</option>
+      <option value="4">4秒</option>
+      <option value="5" selected>5秒</option>
+      <option value="6">6秒</option>
+      <option value="7">7秒</option>
+      <option value="10">10秒</option>
+      <option value="15">15秒</option>
+      <option value="0">無制限</option>
     </select>
   </div>
+
   <div class="row" style="margin-top:9px">
     <button class="primary" id="newBtn">新しい盤面</button>
     <button id="customBtn">盤面を自分で作る</button>
@@ -66,9 +185,10 @@ button.active{outline:2px solid #8294ff}
 <div class="panel">
   <div class="stats">
     <div class="stat"><b id="combo">0</b><small>コンボ</small></div>
-    <div class="stat"><b id="timeLeft">—</b><small>残り</small></div>
+    <div class="stat"><b id="timeLeft">5.0</b><small>残り</small></div>
+    <div class="stat"><b id="elapsed">0.00</b><small>操作秒</small></div>
     <div class="stat"><b id="moves">0</b><small>移動数</small></div>
-    <div class="stat"><b id="best">—</b><small>最高コンボ</small></div>
+    <div class="stat"><b id="best">—</b><small>最高</small></div>
   </div>
 </div>
 
@@ -79,131 +199,378 @@ button.active{outline:2px solid #8294ff}
 
 <div id="customArea" class="hidden">
   <div class="panel">
+    <div class="help">色を選んでマスをタップすると盤面を作れます。</div>
+    <div id="palette" class="row" style="margin-top:8px"></div>
+    <div id="customGrid" class="customGrid"></div>
     <div class="row">
       <button class="primary" id="applyCustom">この盤面で練習</button>
       <button id="randomCustom">ランダムに埋める</button>
       <button id="clearCustom">全部消す</button>
     </div>
-    <p class="help">好きなドロップを選んで、盤面のマスをタップしてください。もう一度タップすると消去できます。</p>
-    <div class="row" id="palette"></div>
   </div>
-  <div id="customGrid" class="customGrid"></div>
 </div>
 
 <div class="panel help">
-  <b>遊び方</b><br>
-  盤面のドロップを押し続けて、好きなルートで動かします。指を離すと終了です。<br>
-  消える判定は「3個以上つながった同色」。落下・連鎖は行わず、<b>盤面上で何コンボ組めたか</b>を練習用スコアとして表示します。
+  パズルを動かしている間は画面スクロールを固定します。指を離すと、横・縦に3個以上そろったドロップが消え、コンボ数を表示したあと新しいランダム盤面に切り替わります。
 </div>
 </div>
 
+<div id="dragOrb"></div>
+
 <script>
 const colors=6;
-let cols=6,rows=5,board=[],drag=null,timer=null,startAt=0,limit=5,moves=0;
+const marks=["火","水","木","光","闇","♥"];
+let cols=6,rows=5,board=[];
+let drag=null,rafTimer=null,limit=5,moves=0,busy=false;
 let custom=false,customData=[],paintColor=0;
 let best=Number(localStorage.getItem("puzzleBest")||0);
+let frozenY=0;
 
 const $=id=>document.getElementById(id);
 $("best").textContent=best||"—";
 
 function setSize(){
-  const [c,r]=$("size").value.split("x").map(Number); cols=c;rows=r;
+  const [c,r]=$("size").value.split("x").map(Number);
+  cols=c;rows=r;
   $("board").style.gridTemplateColumns=`repeat(${cols},1fr)`;
   $("board").style.aspectRatio=`${cols}/${rows}`;
 }
-function randomBoard(){return Array.from({length:cols*rows},()=>Math.floor(Math.random()*colors))}
+function randomBoard(){
+  return Array.from({length:cols*rows},()=>Math.floor(Math.random()*colors));
+}
 function render(){
-  const el=$("board"); el.innerHTML="";
+  const el=$("board");
+  el.innerHTML="";
   board.forEach((v,i)=>{
-    const cell=document.createElement("div");cell.className="cell "+(v>=0?"c"+v:"");
+    const cell=document.createElement("div");
+    cell.className="cell c"+v;
     cell.dataset.i=i;
-    if(v>=0){const d=document.createElement("div");d.className="dot";cell.appendChild(d)}
+    const d=document.createElement("div");
+    d.className="dot";
+    d.dataset.mark=marks[v];
+    cell.appendChild(d);
     el.appendChild(cell);
   });
 }
+function resetStats(){
+  moves=0;
+  $("moves").textContent="0";
+  $("combo").textContent="0";
+  $("elapsed").textContent="0.00";
+  limit=Number($("time").value);
+  $("timeLeft").textContent=limit?limit.toFixed(1):"∞";
+}
+function newBoard(message="ドロップを押したまま動かしてください"){
+  cancelAnimationFrame(rafTimer);
+  busy=false;
+  drag=null;
+  hideDragOrb();
+  unlockPage();
+  setSize();
+  board=randomBoard();
+  resetStats();
+  render();
+  $("message").textContent=message;
+}
+
 function indexFromPoint(x,y){
   const r=$("board").getBoundingClientRect();
-  let c=Math.floor((x-r.left)/r.width*cols), rr=Math.floor((y-r.top)/r.height*rows);
-  c=Math.max(0,Math.min(cols-1,c));rr=Math.max(0,Math.min(rows-1,rr));return rr*cols+c;
+  let c=Math.floor((x-r.left)/r.width*cols);
+  let rr=Math.floor((y-r.top)/r.height*rows);
+  c=Math.max(0,Math.min(cols-1,c));
+  rr=Math.max(0,Math.min(rows-1,rr));
+  return rr*cols+c;
 }
-function swap(a,b){[board[a],board[b]]=[board[b],board[a]];moves++;render();calcCombo()}
-function calcCombo(){
-  const seen=new Set(),groups=[];
-  for(let i=0;i<board.length;i++){
-    if(seen.has(i)||board[i]<0)continue;
-    const color=board[i],q=[i],g=[];seen.add(i);
-    while(q.length){let x=q.pop();g.push(x);let r=Math.floor(x/cols),c=x%cols;
-      for(const [dr,dc] of [[1,0],[-1,0],[0,1],[0,-1]]){
-        let nr=r+dr,nc=c+dc,ni=nr*cols+nc;
-        if(nr>=0&&nr<rows&&nc>=0&&nc<cols&&!seen.has(ni)&&board[ni]===color){seen.add(ni);q.push(ni)}
+function swap(a,b){
+  if(a===b)return;
+  [board[a],board[b]]=[board[b],board[a]];
+  moves++;
+  $("moves").textContent=moves;
+  render();
+}
+
+/* 本家に近い「横/縦3個以上」の判定。
+   まず直線マッチを印付けし、同色でつながった印付きセルを1コンボとして数える。 */
+function getMatches(){
+  const matched=new Set();
+
+  for(let r=0;r<rows;r++){
+    let start=0;
+    for(let c=1;c<=cols;c++){
+      const same=c<cols && board[r*cols+c]===board[r*cols+start];
+      if(!same){
+        if(c-start>=3) for(let x=start;x<c;x++) matched.add(r*cols+x);
+        start=c;
       }
     }
-    if(g.length>=3)groups.push(g);
   }
-  $("combo").textContent=groups.length;
-  if(groups.length>best){best=groups.length;$("best").textContent=best;localStorage.setItem("puzzleBest",best)}
-  return groups.length;
-}
-function begin(){
-  custom=false;$("playArea").classList.remove("hidden");$("customArea").classList.add("hidden");
-  setSize();board=randomBoard();moves=0;render();calcCombo();startTimer();
-}
-function startTimer(){
-  clearInterval(timer);limit=Number($("time").value);startAt=performance.now();
-  if(!limit){$("timeLeft").textContent="∞";return}
-  $("timeLeft").textContent=limit.toFixed(1);
-  timer=setInterval(()=>{
-    const left=Math.max(0,limit-(performance.now()-startAt)/1000);
-    $("timeLeft").textContent=left.toFixed(1);
-    if(left<=0){clearInterval(timer);drag=null;$("message").textContent="時間切れ！ 「新しい盤面」で再挑戦できます。"}
-  },50);
-}
-$("board").addEventListener("pointerdown",e=>{
-  if(!e.target.closest(".cell"))return;
-  if(limit && (performance.now()-startAt)/1000>=limit)return;
-  e.preventDefault();const i=indexFromPoint(e.clientX,e.clientY);drag={i,last:i};
-  $("board").setPointerCapture(e.pointerId);$("board").children[i].classList.add("selected");
-});
-$("board").addEventListener("pointermove",e=>{
-  if(!drag)return;e.preventDefault();let i=indexFromPoint(e.clientX,e.clientY);
-  if(i!==drag.last){swap(drag.last,i);drag.last=i}
-});
-$("board").addEventListener("pointerup",e=>{
-  if(!drag)return;$("board").children[drag.last]?.classList.remove("selected");drag=null;
-});
-$("board").addEventListener("pointercancel",()=>drag=null);
-$("newBtn").onclick=begin;
-$("size").onchange=begin;
+  for(let c=0;c<cols;c++){
+    let start=0;
+    for(let r=1;r<=rows;r++){
+      const same=r<rows && board[r*cols+c]===board[start*cols+c];
+      if(!same){
+        if(r-start>=3) for(let y=start;y<r;y++) matched.add(y*cols+c);
+        start=r;
+      }
+    }
+  }
 
-$("time").onchange=()=>{if(!custom)begin()};
+  const groups=[];
+  const seen=new Set();
+  for(const i of matched){
+    if(seen.has(i))continue;
+    const color=board[i],q=[i],group=[];
+    seen.add(i);
+    while(q.length){
+      const x=q.pop();
+      group.push(x);
+      const rr=Math.floor(x/cols),cc=x%cols;
+      for(const [dr,dc] of [[1,0],[-1,0],[0,1],[0,-1]]){
+        const nr=rr+dr,nc=cc+dc,ni=nr*cols+nc;
+        if(nr>=0&&nr<rows&&nc>=0&&nc<cols&&matched.has(ni)&&!seen.has(ni)&&board[ni]===color){
+          seen.add(ni);q.push(ni);
+        }
+      }
+    }
+    groups.push(group);
+  }
+  return {matched:[...matched],groups};
+}
+
+function lockPage(){
+  if(document.body.classList.contains("dragging"))return;
+  frozenY=window.scrollY;
+  document.body.classList.add("dragging");
+  document.body.style.position="fixed";
+  document.body.style.top=`-${frozenY}px`;
+  document.body.style.left="0";
+  document.body.style.right="0";
+}
+function unlockPage(){
+  if(!document.body.classList.contains("dragging"))return;
+  document.body.classList.remove("dragging");
+  document.body.style.position="";
+  document.body.style.top="";
+  document.body.style.left="";
+  document.body.style.right="";
+  window.scrollTo(0,frozenY);
+}
+function preventScroll(e){
+  if(drag)e.preventDefault();
+}
+document.addEventListener("touchmove",preventScroll,{passive:false});
+
+function showDragOrb(color,x,y){
+  const orb=$("dragOrb");
+  const cell=$("board").querySelector(".cell");
+  const size=cell?cell.getBoundingClientRect().width*.86:48;
+  orb.className="c"+color;
+  orb.dataset.mark=marks[color];
+  orb.style.width=size+"px";
+  orb.style.height=size+"px";
+  orb.style.fontSize=Math.max(13,size*.32)+"px";
+  orb.style.display="block";
+  moveDragOrb(x,y);
+}
+function moveDragOrb(x,y){
+  const orb=$("dragOrb");
+  orb.style.left=x+"px";
+  orb.style.top=y+"px";
+}
+function hideDragOrb(){
+  $("dragOrb").style.display="none";
+}
+function markActive(i){
+  [...$("board").children].forEach(c=>c.classList.remove("active"));
+  $("board").children[i]?.classList.add("active");
+}
+
+function startClock(){
+  drag.started=performance.now();
+  const tick=()=>{
+    if(!drag)return;
+    const elapsed=(performance.now()-drag.started)/1000;
+    $("elapsed").textContent=elapsed.toFixed(2);
+    if(limit){
+      const left=Math.max(0,limit-elapsed);
+      $("timeLeft").textContent=left.toFixed(1);
+      if(left<=0){
+        finishDrag(true);
+        return;
+      }
+    }else{
+      $("timeLeft").textContent="∞";
+    }
+    rafTimer=requestAnimationFrame(tick);
+  };
+  rafTimer=requestAnimationFrame(tick);
+}
+
+async function finishDrag(timeUp=false){
+  if(!drag||busy)return;
+  busy=true;
+  cancelAnimationFrame(rafTimer);
+
+  const finalElapsed=(performance.now()-drag.started)/1000;
+  $("elapsed").textContent=finalElapsed.toFixed(2);
+  if(limit)$("timeLeft").textContent=Math.max(0,limit-finalElapsed).toFixed(1);
+
+  drag=null;
+  hideDragOrb();
+  [...$("board").children].forEach(c=>c.classList.remove("active"));
+
+  const result=getMatches();
+  const combos=result.groups.length;
+  $("combo").textContent=combos;
+
+  if(combos>best){
+    best=combos;
+    localStorage.setItem("puzzleBest",best);
+    $("best").textContent=best;
+  }
+
+  if(result.matched.length){
+    $("message").textContent=timeUp?`時間切れ！ ${combos}コンボ`:`${combos}コンボ！`;
+    result.matched.forEach(i=>$("board").children[i]?.classList.add("clearing"));
+    await wait(420);
+  }else{
+    $("message").textContent=timeUp?"時間切れ！ マッチなし":"マッチなし";
+    await wait(350);
+  }
+
+  $("message").textContent="次のランダム盤面を作成中…";
+  await wait(300);
+
+  board=randomBoard();
+  render();
+  moves=0;
+  $("moves").textContent="0";
+  $("combo").textContent="0";
+  $("elapsed").textContent="0.00";
+  $("timeLeft").textContent=limit?limit.toFixed(1):"∞";
+  $("message").textContent="次の盤面です。ドロップを押したまま動かしてください";
+
+  busy=false;
+  unlockPage();
+}
+function wait(ms){return new Promise(r=>setTimeout(r,ms))}
+
+$("board").addEventListener("pointerdown",e=>{
+  if(busy||drag||!e.target.closest(".cell"))return;
+  e.preventDefault();
+
+  const i=indexFromPoint(e.clientX,e.clientY);
+  const color=board[i];
+
+  limit=Number($("time").value);
+  drag={last:i,color,pointerId:e.pointerId,started:performance.now()};
+
+  lockPage();
+  try{$("board").setPointerCapture(e.pointerId)}catch(_){}
+  showDragOrb(color,e.clientX,e.clientY);
+  markActive(i);
+  $("message").textContent="操作中…";
+  startClock();
+});
+
+$("board").addEventListener("pointermove",e=>{
+  if(!drag||busy)return;
+  e.preventDefault();
+  moveDragOrb(e.clientX,e.clientY);
+
+  const i=indexFromPoint(e.clientX,e.clientY);
+  if(i!==drag.last){
+    const prev=drag.last;
+    swap(prev,i);
+    drag.last=i;
+    markActive(i);
+  }
+});
+
+$("board").addEventListener("pointerup",e=>{
+  if(!drag)return;
+  e.preventDefault();
+  finishDrag(false);
+});
+$("board").addEventListener("pointercancel",e=>{
+  if(drag)finishDrag(false);
+});
+
+$("newBtn").onclick=()=>newBoard();
+$("size").onchange=()=>{
+  if(custom)initCustom();
+  else newBoard("盤面サイズを変更しました");
+};
+$("time").onchange=()=>{
+  limit=Number($("time").value);
+  if(!drag)$("timeLeft").textContent=limit?limit.toFixed(1):"∞";
+};
 
 function initCustom(){
-  custom=true;clearInterval(timer);$("playArea").classList.add("hidden");$("customArea").classList.remove("hidden");
-  const [c,r]=$("size").value.split("x").map(Number);cols=c;rows=r;customData=randomBoard();renderCustom();
+  cancelAnimationFrame(rafTimer);
+  drag=null;busy=false;unlockPage();hideDragOrb();
+  custom=true;
+  $("playArea").classList.add("hidden");
+  $("customArea").classList.remove("hidden");
+  const [c,r]=$("size").value.split("x").map(Number);
+  cols=c;rows=r;
+  customData=randomBoard();
+  renderCustom();
+  makePalette();
 }
 function renderCustom(){
-  const g=$("customGrid");g.style.gridTemplateColumns=`repeat(${cols},1fr)`;g.innerHTML="";
+  const g=$("customGrid");
+  g.style.gridTemplateColumns=`repeat(${cols},1fr)`;
+  g.innerHTML="";
   customData.forEach((v,i)=>{
-    const x=document.createElement("div");x.className="customCell "+(v>=0?"c"+v:"");x.dataset.i=i;
-    if(v>=0){const d=document.createElement("div");d.className="dot";x.appendChild(d)}
-    x.onclick=()=>{customData[i]=(customData[i]===paintColor?-1:paintColor);renderCustom()};
-    g.appendChild(x);
+    const cell=document.createElement("div");
+    cell.className="customCell "+(v>=0?"c"+v:"");
+    if(v>=0){
+      const d=document.createElement("div");
+      d.className="dot";
+      d.dataset.mark=marks[v];
+      cell.appendChild(d);
+    }
+    cell.onclick=()=>{
+      customData[i]=(customData[i]===paintColor?-1:paintColor);
+      renderCustom();
+    };
+    g.appendChild(cell);
   });
 }
 function makePalette(){
-  const p=$("palette");p.innerHTML="";
-  for(let c=0;c<colors;c++){let b=document.createElement("button");b.textContent=["🔥","💧","🌿","⚡","🌙","💗"][c];b.className=c===paintColor?"active":"";b.onclick=()=>{paintColor=c;makePalette()};p.appendChild(b)}
+  const p=$("palette");
+  p.innerHTML="";
+  for(let c=0;c<colors;c++){
+    const b=document.createElement("button");
+    b.textContent=marks[c];
+    if(c===paintColor)b.classList.add("active");
+    b.onclick=()=>{paintColor=c;makePalette()};
+    p.appendChild(b);
+  }
 }
 $("customBtn").onclick=initCustom;
-$("size").addEventListener("change",()=>{if(custom)initCustom()});
 $("randomCustom").onclick=()=>{customData=randomBoard();renderCustom()};
 $("clearCustom").onclick=()=>{customData=Array(cols*rows).fill(-1);renderCustom()};
 $("applyCustom").onclick=()=>{
-  if(customData.some(x=>x<0)){alert("空いているマスがあります。すべて埋めてください。");return}
-  board=[...customData];custom=false;$("customArea").classList.add("hidden");$("playArea").classList.remove("hidden");
-  setSize();moves=0;render();calcCombo();$("message").textContent="自作盤面スタート！";startTimer();
+  if(customData.some(v=>v<0)){
+    alert("空いているマスがあります。すべて埋めてください。");
+    return;
+  }
+  custom=false;
+  board=[...customData];
+  $("customArea").classList.add("hidden");
+  $("playArea").classList.remove("hidden");
+  setSize();
+  resetStats();
+  render();
+  $("message").textContent="自作盤面スタート！";
 };
-makePalette();begin();
+
+setSize();
+board=randomBoard();
+resetStats();
+render();
 </script>
 </body>
 </html>
