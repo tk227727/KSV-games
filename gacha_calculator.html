@@ -5,195 +5,130 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>パズドラ ガチャ確率計算</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#101522;color:#f5f7fb;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif}
-.wrap{max-width:720px;margin:auto;padding:18px 14px 45px}h1{font-size:25px;margin-bottom:5px}.sub,.note{color:#aeb8ca;font-size:13px;line-height:1.6}
-.card{background:#1a2130;border:1px solid #30394b;border-radius:16px;padding:15px;margin:11px 0}
+*{box-sizing:border-box}body{margin:0;background:#101522;color:#f5f7fb;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif}.wrap{max-width:720px;margin:auto;padding:18px 14px 45px}
+h1{font-size:25px;margin-bottom:5px}.sub,.note{color:#aeb8ca;font-size:13px;line-height:1.6}.card{background:#1a2130;border:1px solid #30394b;border-radius:16px;padding:15px;margin:11px 0}
 h2{font-size:17px;margin:0 0 12px}.row{display:grid;grid-template-columns:minmax(0,1fr) 120px;gap:10px;align-items:center;margin:10px 0}
-input{width:100%;background:#101622;color:white;border:1px solid #465168;border-radius:10px;padding:10px;font-size:16px;text-align:right}
-button{border:0;border-radius:12px;padding:12px 14px;font-size:15px;font-weight:800;background:#eef2f8;color:#111827;min-height:44px;cursor:pointer;touch-action:manipulation;position:relative;z-index:1}
+input{width:100%;background:#101622;color:#fff;border:1px solid #465168;border-radius:10px;padding:10px;font-size:16px;text-align:right}
+button{border:0;border-radius:12px;padding:12px 14px;font-size:15px;font-weight:800;background:#eef2f8;color:#111827;min-height:44px;-webkit-appearance:none;touch-action:manipulation}
 button.secondary{background:#293246;color:#e6ebf3}.actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
-.target{border-top:1px solid #30394b;padding-top:12px;margin-top:12px}.target:first-child{border-top:0;padding-top:0;margin-top:0}
-.targetHead{display:flex;justify-content:space-between;align-items:center;gap:8px}.targetHead strong{font-size:15px}.remove{padding:6px 9px;min-height:34px;font-size:12px;background:#392832;color:#ffd7df}
-.result{text-align:center}.big{font-size:34px;font-weight:900;margin:6px 0}.statgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.stat{background:#111827;border-radius:12px;padding:11px}.stat b{display:block;font-size:18px;margin-top:4px}.stat small{color:#9eabc0}
-.simBox{background:#111827;border-radius:14px;padding:14px;margin-top:12px}.simTitle{font-weight:850;font-size:18px}.history{font-size:12px;color:#b9c4d6;line-height:1.7;margin-top:8px;max-height:170px;overflow:auto}
-.good{color:#9fe8b0}.warn{color:#ffd59a}.full{grid-column:1/-1}.mini{font-size:12px;color:#9eabc0}
-</style>
-</head>
+.target{border-top:1px solid #30394b;padding-top:12px;margin-top:12px}.target:first-child{border-top:0;padding-top:0;margin-top:0}.targetHead{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.remove{padding:6px 9px;min-height:34px;font-size:12px;background:#392832;color:#ffd7df}.result{text-align:center}.big{font-size:34px;font-weight:900;margin:6px 0}
+.statgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.stat{background:#111827;border-radius:12px;padding:11px;min-width:0}.stat b{display:block;font-size:18px;margin-top:4px;overflow-wrap:anywhere}.stat small{color:#9eabc0}
+.simBox{background:#111827;border-radius:14px;padding:14px;margin-top:12px}.simTitle{font-weight:850;font-size:18px}.history{font-size:12px;color:#b9c4d6;line-height:1.7;margin-top:8px;max-height:170px;overflow:auto}.good{color:#9fe8b0}.warn{color:#ffd59a}.full{grid-column:1/-1}.mini{font-size:12px;color:#9eabc0}
+</style></head>
 <body><main class="wrap">
-<h1>💎 ガチャ確率計算</h1>
-<p class="sub">所持魔法石から引ける回数を計算し、狙いのキャラが揃う確率や擬似ガチャを試せます。</p>
+<h1>💎 ガチャ確率計算</h1><p class="sub">所持魔法石から引ける回数を計算し、狙いのキャラが揃う確率や擬似ガチャを試せます。</p>
+<section class="card"><h2>魔法石</h2>
+<div class="row"><label for="stones">所持魔法石</label><input id="stones" type="number" value="500" min="0" step="1"></div>
+<div class="row"><label for="cost">1回の必要魔法石</label><input id="cost" type="number" value="5" min="1" step="1"></div>
+<div class="statgrid"><div class="stat"><small>引ける回数</small><b id="pulls">100回</b></div><div class="stat"><small>5連できる回数</small><b id="fiveSets">20回</b></div></div></section>
 
-<section class="card">
-<h2>魔法石</h2>
-<div class="row"><label>所持魔法石</label><input id="stones" type="number" value="500" min="0" step="1"></div>
-<div class="row"><label>1回の必要魔法石</label><input id="cost" type="number" value="5" min="1" step="1"></div>
-<div class="statgrid">
-<div class="stat"><small>引ける回数</small><b id="pulls">0回</b></div>
-<div class="stat"><small>5連できる回数</small><b id="fiveSets">0回</b></div>
+<section class="card"><h2>欲しいキャラ（最大5体）</h2>
+<div id="targets">
+  <div class="target" id="staticTarget">
+    <div class="targetHead"><strong>狙い 1</strong></div>
+    <div class="row"><label>キャラ名</label><input type="text" value="キャラA" disabled></div>
+    <div class="row"><label>排出率（%）</label><input type="number" value="1" disabled></div>
+    <div class="row"><label>欲しい数</label><input type="number" value="1" disabled></div>
+  </div>
 </div>
-<p class="mini">※5連は「1回分の石 × 5」で計算します。</p>
-</section>
-
-<section class="card">
-<h2>欲しいキャラ（最大5体）</h2>
-<div id="targets"></div>
 <button id="add" class="secondary" type="button">＋ 欲しいキャラを追加</button>
+<div id="jsWarning" class="note" style="margin-top:10px">※ページ読み込み後に入力できるようになります。</div>
 </section>
 
-<section class="card result">
-<small>所持魔法石で</small>
-<div class="big" id="allProb">0%</div>
-<div id="allText">設定したキャラが必要数すべて揃う確率</div>
-<div class="statgrid">
-<div class="stat"><small>狙いの期待獲得数</small><b id="expected">0体</b></div>
-<div class="stat"><small>狙いが1体以上出る確率</small><b id="anyProb">0%</b></div>
-</div>
-<div id="individual"></div>
-</section>
+<section class="card result"><small>所持魔法石で</small><div class="big" id="allProb">0%</div><div id="allText">設定したキャラが必要数すべて揃う確率</div>
+<div class="statgrid"><div class="stat"><small>狙いの期待獲得数</small><b id="expected">0体</b></div><div class="stat"><small>狙いが1体以上出る確率</small><b id="anyProb">0%</b></div></div><div id="individual"></div></section>
 
-<section class="card">
-<h2>🎰 擬似ガチャ</h2>
-<p class="note">設定した排出率でランダム抽選します。「揃うまで」は設定した全キャラが必要数揃うまで自動で回します。</p>
-<div class="actions">
-<button id="one" type="button">1回引く</button>
-<button id="five" type="button">5連ガチャ</button>
-<button id="until" class="secondary full" type="button">欲しいキャラが揃うまで回す</button>
-<button id="reset" class="secondary full" type="button">擬似ガチャをリセット</button>
-</div>
-<div class="simBox">
-<div class="simTitle" id="simStatus">まだ引いていません</div>
-<div class="statgrid">
-<div class="stat"><small>使用した魔法石</small><b id="used">0個</b></div>
-<div class="stat"><small>ガチャ回数</small><b id="simPulls">0回</b></div>
-</div>
-<div id="simCounts" class="history"></div>
-<div id="history" class="history"></div>
-</div>
-</section>
-
-<section class="card note">
-各キャラの排出率は、ゲーム内に表示されている確率を入力してください。複数の狙いを設定する場合、排出率の合計が100%を超えないようにしてください。確率表示は独立した各ガチャ抽選を前提にした計算です。
-</section>
+<section class="card"><h2>🎰 擬似ガチャ</h2><p class="note">設定した排出率でランダム抽選します。</p>
+<div class="actions"><button id="one" type="button">1回引く</button><button id="five" type="button">5連ガチャ</button><button id="until" class="secondary full" type="button">欲しいキャラが揃うまで回す</button><button id="reset" class="secondary full" type="button">リセット</button></div>
+<div class="simBox"><div class="simTitle" id="simStatus">まだ引いていません</div><div class="statgrid"><div class="stat"><small>使用した魔法石</small><b id="used">0個</b></div><div class="stat"><small>ガチャ回数</small><b id="simPulls">0回</b></div></div><div id="simCounts" class="history"></div><div id="history" class="history"></div></div></section>
+<section class="card note">各キャラの排出率はゲーム内に表示されている確率を入力してください。設定したキャラの排出率合計は100%以下にしてください。</section>
 </main>
 <script>
-const $=id=>document.getElementById(id);
-let targetData=[
- {name:"キャラA",rate:1,want:1},
-];
-let sim={pulls:0,counts:{},history:[]};
+(function(){
+"use strict";
+function el(id){return document.getElementById(id);}
+function num(v,d){var n=Number(v);return isFinite(n)?n:d;}
+function clamp(n,a,b){return Math.min(b,Math.max(a,n));}
+function safe(s){var d=document.createElement("div");d.textContent=String(s);return d.innerHTML;}
+function pct(p){var x=p*100;return (x<10?x.toFixed(2):x.toFixed(1))+"%";}
 
-function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function clamp(n,a,b){n=Number(n);return Number.isFinite(n)?Math.min(b,Math.max(a,n)):a}
+var targets=[{name:"キャラA",rate:1,want:1}];
+var warning=el("jsWarning");if(warning)warning.style.display="none";
+var simPulls=0, simCounts=[0,0,0,0,0], history=[];
+
 function renderTargets(){
- $("targets").innerHTML=targetData.map((t,i)=>`
- <div class="target">
-  <div class="targetHead"><strong>狙い ${i+1}</strong>${targetData.length>1?`<button class="remove" type="button" data-remove="${i}">削除</button>`:""}</div>
-  <div class="row"><label>キャラ名</label><input data-i="${i}" data-k="name" value="${esc(t.name)}" style="text-align:left"></div>
-  <div class="row"><label>排出率（%）</label><input data-i="${i}" data-k="rate" type="number" min="0" max="100" step=".01" value="${t.rate}"></div>
-  <div class="row"><label>欲しい数</label><input data-i="${i}" data-k="want" type="number" min="1" step="1" value="${t.want}"></div>
- </div>`).join("");
- document.querySelectorAll("[data-i]").forEach(el=>el.addEventListener("input",e=>{
-   let i=+e.target.dataset.i,k=e.target.dataset.k;
-   targetData[i][k]=k==="name"?e.target.value:clamp(e.target.value,k==="want"?1:0,k==="want"?99:100);
-   calc();renderSim();
- }));
- document.querySelectorAll("[data-remove]").forEach(b=>b.addEventListener("click",()=>{
-   targetData.splice(+b.dataset.remove,1);renderTargets();calc();renderSim();
- }));
+ var box=el("targets"); box.innerHTML="";
+ for(var i=0;i<targets.length;i++){
+   (function(index){
+     var t=targets[index], wrap=document.createElement("div"); wrap.className="target";
+     wrap.innerHTML='<div class="targetHead"><strong>狙い '+(index+1)+'</strong></div>'+
+       '<div class="row"><label>キャラ名</label><input class="nm" type="text"></div>'+
+       '<div class="row"><label>排出率（%）</label><input class="rt" type="number" min="0" max="100" step="0.01"></div>'+
+       '<div class="row"><label>欲しい数</label><input class="wt" type="number" min="1" step="1"></div>';
+     var head=wrap.querySelector(".targetHead");
+     if(targets.length>1){var rb=document.createElement("button");rb.type="button";rb.className="remove";rb.textContent="削除";rb.addEventListener("click",function(){targets.splice(index,1);renderTargets();calc();renderSim();});head.appendChild(rb);}
+     var nm=wrap.querySelector(".nm"),rt=wrap.querySelector(".rt"),wt=wrap.querySelector(".wt");
+     nm.value=t.name;rt.value=t.rate;wt.value=t.want;
+     nm.addEventListener("input",function(){targets[index].name=nm.value;calc();renderSim();});
+     rt.addEventListener("input",function(){targets[index].rate=clamp(num(rt.value,0),0,100);calc();});
+     wt.addEventListener("input",function(){targets[index].want=Math.max(1,Math.floor(num(wt.value,1)));calc();renderSim();});
+     box.appendChild(wrap);
+   })(i);
+ }
+ el("add").disabled=targets.length>=5;
+ el("add").textContent=targets.length>=5?"最大5体まで追加済み":"＋ 欲しいキャラを追加";
 }
-$("add").addEventListener("click", function(){
-  if(targetData.length >= 5){
-    alert("欲しいキャラは最大5体まで追加できます。");
-    return;
-  }
-  const nextNo = targetData.length + 1;
-  targetData.push({name:"キャラ"+String.fromCharCode(64+nextNo),rate:1,want:1});
-  renderTargets();
-  calc();
-  renderSim();
-});
-
 function binomAtLeast(n,p,k){
- if(k<=0)return 1;if(k>n)return 0;if(p<=0)return 0;if(p>=1)return 1;
- let q=1-p,term=Math.pow(q,n),sum=term;
- for(let x=0;x<k-1;x++){term*=((n-x)/(x+1))*(p/q);sum+=term}
- return Math.max(0,Math.min(1,1-sum));
-}
-// Exact probability that all target categories reach their required counts.
-// Dynamic programming over capped counts, suitable for <=5 targets and normal pull counts.
-function allTargetsProb(n){
- let probs=targetData.map(t=>clamp(t.rate,0,100)/100), other=1-probs.reduce((a,b)=>a+b,0);
- if(other<0)return null;
- let wants=targetData.map(t=>Math.max(1,Math.floor(t.want)));
- let states=new Map();states.set(wants.map(()=>0).join(","),1);
- for(let r=0;r<n;r++){
-   let next=new Map();
-   for(let [key,val] of states){
-     let a=key.split(",").map(Number);
-     next.set(key,(next.get(key)||0)+val*other);
-     probs.forEach((p,i)=>{if(!p)return;let b=a.slice();b[i]=Math.min(wants[i],b[i]+1);let k=b.join(",");next.set(k,(next.get(k)||0)+val*p});
-   }
-   states=next;
+ if(k<=0)return 1;if(k>n||p<=0)return 0;if(p>=1)return 1;
+ var sum=0;
+ for(var x=0;x<k;x++){
+   var comb=1,j;
+   for(j=1;j<=x;j++)comb*=((n-j+1)/j);
+   sum+=comb*Math.pow(p,x)*Math.pow(1-p,n-x);
  }
- return states.get(wants.join(","))||0;
+ return clamp(1-sum,0,1);
 }
-function pct(x){return (x*100).toFixed(x*100<10?2:1)+"%"}
+function allProbApprox(n){
+ var r=1;
+ for(var i=0;i<targets.length;i++)r*=binomAtLeast(n,clamp(targets[i].rate,0,100)/100,Math.max(1,Math.floor(targets[i].want)));
+ return r;
+}
 function calc(){
- let stones=Math.max(0,Math.floor(+$("stones").value||0)),cost=Math.max(1,Math.floor(+$("cost").value||1)),n=Math.floor(stones/cost);
- $("pulls").textContent=n+"回";$("fiveSets").textContent=Math.floor(n/5)+"回";
- let totalRate=targetData.reduce((s,t)=>s+clamp(t.rate,0,100),0)/100;
- $("expected").textContent=(n*totalRate).toFixed(2)+"体";
- $("anyProb").textContent=pct(1-Math.pow(Math.max(0,1-totalRate),n));
- let ap=allTargetsProb(n);
- $("allProb").textContent=ap===null?"設定エラー":pct(ap);
- $("allText").textContent=ap===null?"排出率の合計が100%を超えています":"設定したキャラが必要数すべて揃う確率";
- $("individual").innerHTML=targetData.map(t=>{
-   let p=clamp(t.rate,0,100)/100,w=Math.max(1,Math.floor(t.want)),pr=binomAtLeast(n,p,w);
-   return `<div class="stat" style="margin-top:8px;text-align:left"><small>${esc(t.name||"名称未設定")}を${w}体以上</small><b>${pct(pr)}</b></div>`;
- }).join("");
+ var stones=Math.max(0,Math.floor(num(el("stones").value,0))),cost=Math.max(1,Math.floor(num(el("cost").value,5))),n=Math.floor(stones/cost);
+ el("pulls").textContent=n+"回";el("fiveSets").textContent=Math.floor(n/5)+"回";
+ var total=0,i;for(i=0;i<targets.length;i++)total+=clamp(targets[i].rate,0,100)/100;
+ el("expected").textContent=(n*total).toFixed(2)+"体";
+ el("anyProb").textContent=total>1?"設定エラー":pct(1-Math.pow(1-total,n));
+ el("allProb").textContent=total>1?"設定エラー":pct(allProbApprox(n));
+ el("allText").textContent=total>1?"排出率合計が100%を超えています":"設定したキャラが必要数すべて揃う確率（目安）";
+ var out="";
+ for(i=0;i<targets.length;i++){var p=clamp(targets[i].rate,0,100)/100,w=Math.max(1,Math.floor(targets[i].want));out+='<div class="stat" style="margin-top:8px;text-align:left"><small>'+safe(targets[i].name||"名称未設定")+'を'+w+'体以上</small><b>'+pct(binomAtLeast(n,p,w))+'</b></div>';}
+ el("individual").innerHTML=out;
 }
-["stones","cost"].forEach(id=>$(id).addEventListener("input",calc));
-
-function drawOne(){
- let x=Math.random()*100,c=0;
- for(let i=0;i<targetData.length;i++){c+=clamp(targetData[i].rate,0,100);if(x<c)return i}
- return -1;
+function draw(){
+ var x=Math.random()*100,c=0;
+ for(var i=0;i<targets.length;i++){c+=clamp(targets[i].rate,0,100);if(x<c)return i;}return -1;
 }
-function doPull(count){
- let sum=targetData.reduce((s,t)=>s+clamp(t.rate,0,100),0);
- if(sum>100){alert("排出率の合計を100%以下にしてください。");return}
- let results=[];
- for(let j=0;j<count;j++){
-   let i=drawOne();sim.pulls++;
-   if(i>=0){sim.counts[i]=(sim.counts[i]||0)+1;results.push(targetData[i].name||("狙い"+(i+1)))}
-   else results.push("その他");
- }
- sim.history.unshift(`${count===5?"5連":"1回"}：${results.join(" / ")}`);
- sim.history=sim.history.slice(0,30);renderSim();
+function valid(){var s=0;for(var i=0;i<targets.length;i++)s+=clamp(targets[i].rate,0,100);if(s>100){alert("排出率の合計を100%以下にしてください。");return false;}return true;}
+function complete(){for(var i=0;i<targets.length;i++)if((simCounts[i]||0)<Math.max(1,Math.floor(targets[i].want)))return false;return true;}
+function pull(count){
+ if(!valid())return;var res=[];
+ for(var j=0;j<count;j++){var i=draw();simPulls++;if(i>=0){simCounts[i]=(simCounts[i]||0)+1;res.push(targets[i].name||("狙い"+(i+1)));}else res.push("その他");}
+ history.unshift((count===5?"5連":"1回")+"："+res.join(" / "));if(history.length>30)history.pop();renderSim();
 }
-function complete(){
- return targetData.every((t,i)=>(sim.counts[i]||0)>=Math.max(1,Math.floor(t.want)));
-}
-$("one").addEventListener("click",()=>doPull(1));
-$("five").addEventListener("click",()=>doPull(5));
-$("until").addEventListener("click",()=>{
- let sum=targetData.reduce((s,t)=>s+clamp(t.rate,0,100),0);
- if(sum>100){alert("排出率の合計を100%以下にしてください。");return}
- if(targetData.some(t=>clamp(t.rate,0,100)<=0)){alert("排出率0%のキャラは揃うまで抽選できません。");return}
- let start=sim.pulls,limit=1000000;
- while(!complete()&&sim.pulls-start<limit){
-   let i=drawOne();sim.pulls++;if(i>=0)sim.counts[i]=(sim.counts[i]||0)+1;
- }
- sim.history.unshift(complete()?`揃いました！ 今回は合計${sim.pulls}回で達成`:`上限${limit.toLocaleString()}回までに揃いませんでした`);
- sim.history=sim.history.slice(0,30);renderSim();
-});
-$("reset").addEventListener("click",()=>{sim={pulls:0,counts:{},history:[]};renderSim()});
 function renderSim(){
- let cost=Math.max(1,Math.floor(+$("cost").value||1));
- $("simPulls").textContent=sim.pulls+"回";$("used").textContent=(sim.pulls*cost).toLocaleString()+"個";
- $("simStatus").innerHTML=sim.pulls===0?"まだ引いていません":complete()?'<span class="good">欲しいキャラが全部揃いました！</span>':'<span class="warn">ガチャ継続中</span>';
- $("simCounts").innerHTML=targetData.map((t,i)=>`${esc(t.name||"名称未設定")}：<b>${sim.counts[i]||0}体</b> / 目標${Math.max(1,Math.floor(t.want))}体`).join("<br>");
- $("history").innerHTML=sim.history.map(x=>esc(x)).join("<br>");
+ var cost=Math.max(1,Math.floor(num(el("cost").value,5)));
+ el("simPulls").textContent=simPulls+"回";el("used").textContent=(simPulls*cost).toLocaleString()+"個";
+ el("simStatus").innerHTML=simPulls===0?"まだ引いていません":complete()?'<span class="good">欲しいキャラが全部揃いました！</span>':'<span class="warn">ガチャ継続中</span>';
+ var s="";for(var i=0;i<targets.length;i++)s+=safe(targets[i].name||"名称未設定")+"：<b>"+(simCounts[i]||0)+"体</b> / 目標"+Math.max(1,Math.floor(targets[i].want))+"体<br>";
+ el("simCounts").innerHTML=s;el("history").innerHTML=history.map(safe).join("<br>");
 }
+el("add").addEventListener("click",function(){if(targets.length>=5)return;targets.push({name:"キャラ"+String.fromCharCode(65+targets.length),rate:1,want:1});renderTargets();calc();renderSim();});
+el("stones").addEventListener("input",calc);el("cost").addEventListener("input",function(){calc();renderSim();});
+el("one").addEventListener("click",function(){pull(1);});el("five").addEventListener("click",function(){pull(5);});
+el("until").addEventListener("click",function(){if(!valid())return;for(var z=0;z<targets.length;z++)if(targets[z].rate<=0){alert("排出率0%のキャラは「揃うまで」を実行できません。");return;}var start=simPulls,limit=1000000;while(!complete()&&simPulls-start<limit){var i=draw();simPulls++;if(i>=0)simCounts[i]=(simCounts[i]||0)+1;}history.unshift(complete()?"揃いました！ 合計"+simPulls+"回で達成":"100万回までに揃いませんでした");renderSim();});
+el("reset").addEventListener("click",function(){simPulls=0;simCounts=[0,0,0,0,0];history=[];renderSim();});
 renderTargets();calc();renderSim();
+})();
 </script></body></html>
