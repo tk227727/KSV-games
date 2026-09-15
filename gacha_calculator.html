@@ -10,7 +10,7 @@
 .card{background:#1a2130;border:1px solid #30394b;border-radius:16px;padding:15px;margin:11px 0}
 h2{font-size:17px;margin:0 0 12px}.row{display:grid;grid-template-columns:minmax(0,1fr) 120px;gap:10px;align-items:center;margin:10px 0}
 input{width:100%;background:#101622;color:white;border:1px solid #465168;border-radius:10px;padding:10px;font-size:16px;text-align:right}
-button{border:0;border-radius:12px;padding:12px 14px;font-size:15px;font-weight:800;background:#eef2f8;color:#111827;min-height:44px}
+button{border:0;border-radius:12px;padding:12px 14px;font-size:15px;font-weight:800;background:#eef2f8;color:#111827;min-height:44px;cursor:pointer;touch-action:manipulation;position:relative;z-index:1}
 button.secondary{background:#293246;color:#e6ebf3}.actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
 .target{border-top:1px solid #30394b;padding-top:12px;margin-top:12px}.target:first-child{border-top:0;padding-top:0;margin-top:0}
 .targetHead{display:flex;justify-content:space-between;align-items:center;gap:8px}.targetHead strong{font-size:15px}.remove{padding:6px 9px;min-height:34px;font-size:12px;background:#392832;color:#ffd7df}
@@ -101,7 +101,17 @@ function renderTargets(){
    targetData.splice(+b.dataset.remove,1);renderTargets();calc();renderSim();
  }));
 }
-$("add").addEventListener("click",()=>{if(targetData.length<5){targetData.push({name:"キャラ"+String.fromCharCode(65+targetData.length),rate:1,want:1});renderTargets();calc();renderSim()}});
+$("add").addEventListener("click", function(){
+  if(targetData.length >= 5){
+    alert("欲しいキャラは最大5体まで追加できます。");
+    return;
+  }
+  const nextNo = targetData.length + 1;
+  targetData.push({name:"キャラ"+String.fromCharCode(64+nextNo),rate:1,want:1});
+  renderTargets();
+  calc();
+  renderSim();
+});
 
 function binomAtLeast(n,p,k){
  if(k<=0)return 1;if(k>n)return 0;if(p<=0)return 0;if(p>=1)return 1;
