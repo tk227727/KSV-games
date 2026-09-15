@@ -6,50 +6,26 @@
 <title>パズドラ練習ツール</title>
 <style>
 *{box-sizing:border-box}
-body{
-  margin:0;min-height:100vh;
-  background:linear-gradient(160deg,#0d1321,#171f33);
-  color:#f7f9fc;
-  font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif
-}
+body{margin:0;min-height:100vh;background:linear-gradient(160deg,#0d1321,#171f33);color:#f7f9fc;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif}
 .wrap{max-width:680px;margin:auto;padding:42px 16px 50px}
 h1{font-size:30px;margin:10px 0 6px}
 .sub{color:#aeb8ca;margin:0 0 30px}
 .grid{display:grid;gap:16px}
-.card{
-  display:block;text-decoration:none;color:inherit;
-  background:#1d2638;border:1px solid #344158;
-  border-radius:20px;padding:22px;
-  box-shadow:0 8px 24px #0003;
-  transition:transform .15s
-}
+.card{display:block;text-decoration:none;color:inherit;background:#1d2638;border:1px solid #344158;border-radius:20px;padding:22px;box-shadow:0 8px 24px #0003;transition:transform .15s}
 .card:active{transform:scale(.98)}
-.icon{font-size:38px}
-.title{font-size:21px;font-weight:850;margin:10px 0 6px}
-.desc{color:#aeb8ca;font-size:13px;line-height:1.6}
-.arrow{float:right;font-size:28px;color:#8390a6}
+.icon{font-size:38px}.title{font-size:21px;font-weight:850;margin:10px 0 6px}
+.desc{color:#aeb8ca;font-size:13px;line-height:1.6}.arrow{float:right;font-size:28px;color:#8390a6}
 </style>
 </head>
 <body>
 <main class="wrap">
-  <h1>パズドラ練習ツール</h1>
-  <p class="sub">使いたい機能を選んでください。</p>
-
-  <div class="grid">
-    <a class="card" href="puzzle_training.html">
-      <span class="arrow">›</span>
-      <div class="icon">🧩</div>
-      <div class="title">パズル練習</div>
-      <div class="desc">盤面サイズや操作時間を設定して、自由にパズルを練習できます。</div>
-    </a>
-
-    <a class="card" href="drop_calculator.html">
-      <span class="arrow">›</span>
-      <div class="icon">📊</div>
-      <div class="title">ドロップ率計算</div>
-      <div class="desc">通常ドロップ・部位破壊素材のドロップ率を計算できます。</div>
-    </a>
-  </div>
+<h1>パズドラ練習ツール</h1>
+<p class="sub">使いたい機能を選んでください。</p>
+<div class="grid">
+<a class="card" href="puzzle_training.html"><span class="arrow">›</span><div class="icon">🧩</div><div class="title">パズル練習</div><div class="desc">盤面サイズや操作時間を設定して、自由にパズルを練習できます。</div></a>
+<a class="card" href="drop_calculator.html"><span class="arrow">›</span><div class="icon">📊</div><div class="title">ドロップ率計算</div><div class="desc">通常ドロップ・部位破壊素材のドロップ率を計算できます。</div></a>
+<a class="card" href="gacha_calculator.html"><span class="arrow">›</span><div class="icon">💎</div><div class="title">ガチャ確率計算</div><div class="desc">所持魔法石から確率を計算し、擬似ガチャで狙いが揃うまで試せます。</div></a>
+</div>
 </main>
 </body>
 </html>
